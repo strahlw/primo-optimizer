@@ -12,7 +12,7 @@ Step 1: Download the source code from GitHub
 
 .. _download:
 
-* Navigate to the `GitHub Repository <to be updated>`_. 
+* Navigate to the `GitHub Repository <https://github.com/NEMRI-org/primo-optimizer>`_. 
 * Click on the Green Code button and select Download Zip as shown `here <https://docs.github.com/en/repositories/working-with-files/using-files/downloading-source-code-archives#downloading-source-code-archives-from-the-repository-view>`_.
    
 .. figure:: _static/download_zip.png

@@ -63,8 +63,8 @@ Before proceeding with the installation via GitHub, ensure that the following pr
 
 3. **Clone the Fork**: Clone the fork locally using the following command: ::
 
-        git clone https://github.com/<USERNAME>/project_emissions.git [the name - project_emissions may need to be changed]
-        cd project_emissions
+        git clone https://github.com/<USERNAME>/primo-optimizer.git
+        cd primo-optimizer
    
   Users should replace the '*<USERNAME>*' with their GitHub username.
 
@@ -72,7 +72,7 @@ Before proceeding with the installation via GitHub, ensure that the following pr
 
 To synchronize the fork with the main PRIMO repository, add it as a remote by executing the following command: ::
     
-    git remote add upstream https://github.com/MAZamarripa/project_emissions.git [this needs to be replaced with the actual URL of the public repository]
+    git remote add upstream https://github.com/NEMRI-org/primo-optimizer.git
 
 To verify whether the remote has been added correctly, run: ::
     
@@ -87,7 +87,7 @@ Step 2: Create the Python Environment
 In the Anaconda command prompt, follow these steps to create and activate a new conda environment. 
 You can replace "*primo*" with the preferred environment name, if desired: ::
     
-    conda create --name primo
+    conda create --name primo python=3.12
     conda activate primo
 
 If the user handles protected data and contributes to PRIMO development, it is advisable to maintain separate environments for each task.
@@ -120,7 +120,7 @@ These steps ensure that all necessary dependencies are installed and pre-commit 
 Since PRIMO identifies P&A projects by solving an optimization problem, it requires a suitable Mixed Integer Linear Programming (MILP) solver. 
 For users interested in using the free solver SCIP to solve PRIMO's optimization problems, please run: ::
     
-    conda install -c conda-forge scip
+    conda install -c conda-forge scip=9.1.0
 
 Users can also employ other commercial solvers, for example Gurobi, to solve the optimization problem. 
 However, users are responsible for configuring and setting up these solvers themselves.

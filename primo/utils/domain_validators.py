@@ -11,5 +11,34 @@
 # perform publicly and display publicly, and to permit others to do so.
 #################################################################################
 
-from .metric_data import EfficiencyMetrics, ImpactMetrics
-from .well_data_column_names import WellDataColumnNames
+"""
+This module contains functions that can be used for domain validation
+in Pyomo's `ConfigDict()` data structure.
+"""
+
+
+# pylint: disable-next = invalid-name
+def InRange(lb, ub):
+    """
+    Domain validator for 1D compact sets.
+
+    Parameters
+    ----------
+    lb : float
+        Lower bound
+
+    ub : float
+        Upper bound
+
+    Returns
+    -------
+    _in_range :
+        Pointer to a domain validator function
+    """
+
+    def _in_range(val):
+        if lb <= val <= ub:
+            return val
+        raise ValueError(f"Value {val} lies outside the admissible range [{lb}, {ub}]")
+
+    return _in_range

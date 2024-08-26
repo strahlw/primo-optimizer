@@ -11,5 +11,21 @@
 # perform publicly and display publicly, and to permit others to do so.
 #################################################################################
 
-from .metric_data import EfficiencyMetrics, ImpactMetrics
-from .well_data_column_names import WellDataColumnNames
+# Installed libs
+import pytest
+
+# User-defined libs
+from primo.utils.domain_validators import InRange
+
+
+def test_inrange():
+    """Tests InRange domain validator"""
+    val = 5.0
+    assert val == InRange(0.0, 10.0)(val)
+
+    val = -5.0
+    with pytest.raises(
+        ValueError,
+        match=("Value -5.0 lies outside the admissible range \\[0.0, 10.0\\]"),
+    ):
+        InRange(0.0, 10.0)(val)

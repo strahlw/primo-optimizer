@@ -16,6 +16,9 @@ This module contains functions that can be used for domain validation
 in Pyomo's `ConfigDict()` data structure.
 """
 
+# Installed libs
+from pyomo.common.config import NonNegativeFloat
+
 
 # pylint: disable-next = invalid-name
 def InRange(lb, ub):
@@ -42,3 +45,25 @@ def InRange(lb, ub):
         raise ValueError(f"Value {val} lies outside the admissible range [{lb}, {ub}]")
 
     return _in_range
+
+
+def validate_mobilization_cost(data: dict):
+    """
+    Validates the mobilization cost data
+
+    Parameters
+    ----------
+    data : dict
+        key => number of wells, value => cost of plugging
+
+    Returns
+    -------
+    data
+        Validated mobilization cost data.
+    """
+    for k in range(1, len(data) + 1):
+        if k not in data:
+            raise KeyError(f"Mobilization cost for {k} wells is not provided.")
+    for key, val in data.items():
+        data[key] = NonNegativeFloat(val)
+    return data

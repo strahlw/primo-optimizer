@@ -33,7 +33,7 @@ from pyomo.environ import SolverFactory
 from primo.data_parser import WellData
 from primo.opt_model.model_with_clustering import PluggingCampaignModel
 from primo.utils import get_solver
-from primo.utils.clustering import perform_clustering
+from primo.utils.clustering_utils import perform_clustering
 from primo.utils.domain_validators import InRange, validate_mobilization_cost
 from primo.utils.raise_exception import raise_exception
 
@@ -282,15 +282,15 @@ class OptModelInputs:
         else:
             # Otherwise, auto-detect solver in order of priority
             for sol in ("gurobi_persistent", "gurobi", "scip", "glpk", "highs"):
-                solver = SolverFactory(sol)
-                if solver.available(exception_flag=False):
+                if SolverFactory(sol).available(exception_flag=False):
                     LOGGER.info(
                         f"Optimization solver is not specified. "
                         f"Using {sol} as the optimization solver."
                     )
-                    self._solver = solver
+                    solver = get_solver(solver=sol, **kwargs)
                     break
 
+        self._solver = solver
         if solver.name == "gurobi_persistent":
             # For persistent solvers, model instance need to be set manually
             solver.set_instance(self._opt_model)
@@ -309,7 +309,7 @@ class OptModelInputs:
         gm = solver._solver_model  # This is the gurobipy model
         # Get Pyomo var to Gurobipy var map.
         # Gurobi vars can be accessed as py_to_gp[<pyomo var>]
-        py_to_gp = solver._pyomo_var_to_solver_var_map
+        pm_to_gm = solver._pyomo_var_to_solver_var_map
 
         # Return if the pool search mode is not 2
         if gm.Params.PoolSearchMode != 2 or solver.name != "gurobi_persistent":
@@ -329,15 +329,15 @@ class OptModelInputs:
 
             for c in pm.set_clusters:
                 blk = pm.cluster[c]
-                if py_to_gp[blk.select_cluster].Xn < 0.05:
+                if pm_to_gm[blk.select_cluster].Xn < 0.05:
                     # Cluster c is not chosen, so continue
                     continue
 
                 # Wells in cluster c are chosen
                 optimal_campaign[c] = []
-                plugging_cost[c] = py_to_gp[blk.plugging_cost].Xn
+                plugging_cost[c] = pm_to_gm[blk.plugging_cost].Xn
                 for w in blk.set_wells:
-                    if py_to_gp[blk.select_well[w]].Xn > 0.95:
+                    if pm_to_gm[blk.select_well[w]].Xn > 0.95:
                         # Well w is chosen, so store it in the dict
                         optimal_campaign[c].append(w)
 

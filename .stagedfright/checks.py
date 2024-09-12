@@ -41,6 +41,7 @@ MAP_PATH_EXPECTED_HARDCODED_DATA_COUNT = {
     "primo/utils/__init__.py": 6,
     "primo/utils/age_depth_estimation.py": 18,
     "primo/utils/census_utils.py": 12,
+    "primo/utils/project_information_utils.py": 21,
     "primo/utils/clustering_utils.py": 7,
     "primo/utils/config_utils.py": 15,
     "primo/utils/demo_utils.py": 30,
@@ -67,6 +68,7 @@ MAP_PATH_EXPECTED_HARDCODED_DATA_COUNT = {
     "primo/utils/tests/test_map_utils.py": 124,
     "primo/utils/tests/test_opt_utils.py": 55,
     "primo/utils/tests/test_proximity_utils.py": 26,
+    "primo/utils/tests/test_project_information_utils.py": 480,
     "primo/utils/welldata_clustering_functions.py": 14,
 }
 

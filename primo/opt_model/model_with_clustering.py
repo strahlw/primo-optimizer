@@ -29,6 +29,9 @@ from pyomo.environ import (
     maximize,
 )
 
+# User-defined libs
+from primo.opt_model.result_parser import OptimalCampaign
+
 LOGGER = logging.getLogger(__name__)
 
 
@@ -389,6 +392,5 @@ class PluggingCampaignModel(ConcreteModel):
                     optimal_campaign[c].append(w)
 
         # Well data
-        # wd = self.model_inputs.config.well_data
-        # return OptimalCampaign(wd, optimal_campaign, plugging_cost)
-        return (optimal_campaign, plugging_cost)
+        wd = self.model_inputs.config.well_data
+        return OptimalCampaign(wd, optimal_campaign, plugging_cost)

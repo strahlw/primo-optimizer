@@ -64,7 +64,9 @@ class OptimalProject:
         self.num_wells = len(index)
         # Optimization problem uses million USD. Convert it to USD
         self.plugging_cost = plugging_cost * 1e6
-        self.project_info = ProjectDescriptor(self._df, project_id)
+        self.project_info = ProjectDescriptor(
+            self._df, project_id, self._col_names, self.num_wells
+        )
         self.project_info.print_project_info()
 
     def __iter__(self):

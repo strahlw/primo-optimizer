@@ -13,6 +13,7 @@
 
 # User-defined libs
 from primo.data_parser import WellData
+from primo.utils.project_information_utils import ProjectDescriptor
 
 INFO_UNAVAILABLE = "INFO_UNAVAILABLE"
 
@@ -22,7 +23,9 @@ class OptimalProject:
     Class for storing optimal projects
     """
 
-    def __init__(self, wd: WellData, index: list, plugging_cost: float):
+    def __init__(
+        self, wd: WellData, index: list, plugging_cost: float, project_id: int
+    ):
         """
         Constructs an object for storing optimal project results
         Parameters
@@ -32,6 +35,12 @@ class OptimalProject:
 
         index : list
             List of indices/rows/wells belonging to the cluster/group
+
+        plugging_cost : float
+            Cost of plugging
+
+        project_id : int
+            Project id
         """
         # Motivation for storing the entire DataFrame: After the problem is solved
         # it is desired to display/highlight flagged wells for which the information
@@ -55,6 +64,8 @@ class OptimalProject:
         self.num_wells = len(index)
         # Optimization problem uses million USD. Convert it to USD
         self.plugging_cost = plugging_cost * 1e6
+        self.project_info = ProjectDescriptor(self._df, project_id)
+        self.project_info.print_project_info()
 
     def __iter__(self):
         return iter(self._df.index)
@@ -118,7 +129,10 @@ class OptimalCampaign:
         index = 1
         for cluster, wells in clusters_dict.items():
             self.projects[index] = OptimalProject(
-                wd=wd, index=wells, plugging_cost=plugging_cost[cluster]
+                wd=wd,
+                index=wells,
+                plugging_cost=plugging_cost[cluster],
+                project_id=cluster,
             )
             index += 1
 

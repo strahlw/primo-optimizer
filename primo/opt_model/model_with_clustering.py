@@ -390,7 +390,6 @@ class PluggingCampaignModel(ConcreteModel):
                 if blk.select_well[w].value > 0.95:
                     # Well w is chosen, so store it in the dict
                     optimal_campaign[c].append(w)
-
         # Well data
         wd = self.model_inputs.config.well_data
         return OptimalCampaign(wd, optimal_campaign, plugging_cost)

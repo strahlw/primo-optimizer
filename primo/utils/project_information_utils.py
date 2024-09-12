@@ -11,29 +11,29 @@ from tabulate import tabulate
 # User-defined libs
 from primo.data_parser import ImpactMetrics, WellData, WellDataColumnNames
 
-col_names = WellDataColumnNames(
-    well_id="API Well Number",
-    latitude="Latitude",
-    longitude="Longitude",
-    operator_name="Operator Name",
-    age="Age [Years]",
-    depth="Depth [ft]",
-    leak="Leak [Yes/No]",
-    compliance="Compliance [Yes/No]",
-    violation="Violation [Yes/No]",
-    incident="Incident [Yes/No]",
-    hospitals="Number of Nearby Hospitals",
-    schools="Number of Nearby Schools",
-    ann_gas_production="Gas [Mcf/Year]",
-    ann_oil_production="Oil [bbl/Year]",
-    # These are user-specific columns
-    additional_columns={
-        "elevation_delta": "Elevation Delta [m]",
-        "dist_to_road": "Distance to Road [miles]",
-    },
-)
-# wd = WellData(filename="../demo/cluster_Cluster 2.csv", column_names=col_names)
-wd = pd.read_csv("../demo/cluster_Cluster 2.csv")
+# col_names = WellDataColumnNames(
+#     well_id="API Well Number",
+#     latitude="Latitude",
+#     longitude="Longitude",
+#     operator_name="Operator Name",
+#     age="Age [Years]",
+#     depth="Depth [ft]",
+#     leak="Leak [Yes/No]",
+#     compliance="Compliance [Yes/No]",
+#     violation="Violation [Yes/No]",
+#     incident="Incident [Yes/No]",
+#     hospitals="Number of Nearby Hospitals",
+#     schools="Number of Nearby Schools",
+#     ann_gas_production="Gas [Mcf/Year]",
+#     ann_oil_production="Oil [bbl/Year]",
+#     # These are user-specific columns
+#     additional_columns={
+#         "elevation_delta": "Elevation Delta [m]",
+#         "dist_to_road": "Distance to Road [miles]",
+#     },
+# )
+# # wd = WellData(filename="../demo/cluster_Cluster 2.csv", column_names=col_names)
+# wd = pd.read_csv("../demo/cluster_Cluster 2.csv")
 
 
 class DescriptionType(Enum):
@@ -85,6 +85,8 @@ class ProjectDescriptor(object):
         self.well_data = well_data
         self.project_id = project_id
         self.project_info = ProjectInfo(project_id)
+        self._populate_project_info_stats_statements()
+        self._populate_project_info_count_statements()
 
     # def _count_statement(self, descriptor_str : str, num_wells : int):
     #     """
@@ -110,6 +112,7 @@ class ProjectDescriptor(object):
         """
         # if not self.well_data[col_name].value_counts()[self.well_data[col_name].values[0]] == len(self.well_data[col_name]):
         #     print(self.well_data[col_name].values)
+        #     print(len(self.well_data[col_name].values))
         #     sys.exit(0)
         assert self.well_data[col_name].value_counts()[
             self.well_data[col_name].values[0]
@@ -372,11 +375,11 @@ class ProjectInfo(object):
         self._print_project_warnings()
 
 
-if __name__ == "__main__":
-    project_id = 2
-    test = ProjectDescriptor(wd, project_id)
+# if __name__ == "__main__":
+#     project_id = 2
+#     test = ProjectDescriptor(wd, project_id)
 
-    # tests for these functions
-    test._populate_project_info_stats_statements()
-    test._populate_project_info_count_statements()
-    test.print_project_info()
+#     # tests for these functions
+#     test._populate_project_info_stats_statements()
+#     test._populate_project_info_count_statements()
+#     test.print_project_info()

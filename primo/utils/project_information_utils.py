@@ -44,7 +44,13 @@ class ProjectDescriptor(object):
         self.well_data = well_data
         self.project_id = project_id
         self.project_info = ProjectInfo(project_id)
-        self.project_info.add_row_data("Number of wells ", "-", "-", "-", num_wells)
+        self.project_info.add_row_data(
+            "Number of wells ",
+            self.filler_char,
+            self.filler_char,
+            self.filler_char,
+            num_wells,
+        )
         self.well_cols = well_cols
         self._populate_project_info_all_statements()
 
@@ -171,7 +177,7 @@ class ProjectInfo(object):
 
         Parameters
         ----------
-        info_type : DescriptionType
+        info_type : str
             The type of info
 
         message : str

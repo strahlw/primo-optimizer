@@ -225,3 +225,30 @@ class ProjectInfo(object):
         """
         self._print_project_summary()
         self._print_project_warnings()
+
+
+class EfficiencyCalculator(object):
+    """
+    A class to compute efficiency scores for projects
+    """
+
+    def __init__(self, project_data: WellData):
+        """
+        Constructs the object for all of the efficiency computations
+
+        Parameters
+        ----------
+
+        project_data: WellData
+            All of the project data in a WellData object
+
+        """
+
+        self.project_data = project_data
+        col_names = project_data.get_col_names()
+        # Distance to centroid...need to compute this
+        # add centriod to the all of the objects
+        # add distance from centroid to all of the objects
+        self.relevant_columns = [
+            col_names.elevation_delta,
+        ]

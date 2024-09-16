@@ -1116,3 +1116,9 @@ class WellData:
                 f"Format {file_format} is not supported.",
                 ValueError,
             )
+
+    def get_col_names(self):
+        """
+        Returns the WellDataColumnNames object associated with the WellData object
+        """
+        return self._col_names

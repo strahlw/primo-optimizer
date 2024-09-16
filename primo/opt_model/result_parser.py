@@ -102,6 +102,11 @@ class OptimalProject:
 
         return len(self._df[self._df[col_name] > 0].index)
 
+    def return_size_of_col(self, col_name):
+        """Returns the size of the column for the project"""
+        print(len(self._df[col_name]))
+        return len(self._df[col_name])
+
 
 class OptimalCampaign:
     """
@@ -125,6 +130,9 @@ class OptimalCampaign:
             A dictionary where keys are cluster numbers and values
             are plugging cost for that cluster
         """
+        # for now include a pointer to well data, so that I have column names
+        self.wd = wd
+
         self._clusters_dict = clusters_dict
         self.projects = {}
 
@@ -150,3 +158,14 @@ class OptimalCampaign:
             msg += f"Project {i} has {obj.num_wells} wells.\n"
 
         return msg
+
+    def _get_max_value_across_projects(self, col_name):
+        """
+        Return the max values of a column across all projects (for efficiency calculation)
+        """
+        return max(
+            [
+                project.return_size_of_col(col_name)
+                for index, project in self.projects.items()
+            ]
+        )

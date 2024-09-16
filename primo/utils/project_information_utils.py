@@ -5,11 +5,13 @@ from enum import Enum
 from typing import Union
 
 # Installed libs
+import numpy as np
 import pandas as pd
 from tabulate import tabulate
 
 # User-defined libs
 from primo.data_parser import ImpactMetrics, WellData, WellDataColumnNames
+from primo.utils.geo_utils import get_distance
 
 
 class ProjectDescriptor(object):
@@ -229,7 +231,7 @@ class ProjectInfo(object):
 
 class EfficiencyCalculator(object):
     """
-    A class to compute efficiency scores for projects
+    A class to compute efficiency scores for projects.
     """
 
     def __init__(self, project_data: WellData):
@@ -245,10 +247,42 @@ class EfficiencyCalculator(object):
         """
 
         self.project_data = project_data
-        col_names = project_data.get_col_names()
+        self.col_names = project_data.get_col_names()
         # Distance to centroid...need to compute this
         # add centriod to the all of the objects
         # add distance from centroid to all of the objects
         self.relevant_columns = [
-            col_names.elevation_delta,
+            self.col_names.elevation_delta,
         ]
+
+    def _compute_centroid(self):
+        """
+        Computes the centroid of the project
+        """
+        return tuple(
+            np.round(
+                np.mean(
+                    self.project_data.data[
+                        [self.col_names.latitude, self.col_names.longitude]
+                    ].values,
+                    axis=0,
+                ),
+                6,
+            )
+        )
+
+    def add_centroid_col(self):
+        """
+        Adds the distance to centroid column to the well data
+        """
+        # I am assuming here that apply returns the data in the corresponding order
+        return self.project_data.add_new_column_ordered(
+            ["centroid", "Distance to Centroid [miles]"],
+            self.project_data.data.apply(
+                lambda row: get_distance(
+                    (row[self.col_names.latitude], row[self.col_names.longitude]),
+                    self._compute_centroid(),
+                ),
+                axis=1,
+            ).values,
+        )

@@ -624,6 +624,36 @@ class WellData:
         for row in rows:
             self.data.loc[row, col_name] = 1
 
+    def add_new_column_ordered(
+        self, col_name_list: list, values: Union[np.array, pd.DataFrame, list]
+    ):
+        """
+        Adds a single column to the WellData and other related data structures
+        The column must be in the correct order corresponding to the existing data
+
+        Parameters
+        ----------
+        col_name : list(str)
+            List of 2 strings: the column variable name, the column header for the data
+        values : np.array, pd.DataFrame, list
+            The values for the column
+        """
+        if len(col_name_list) != 2:
+            raise_exception(
+                "The list must include only the column variable name and the column header label.",
+                AttributeError,
+            )
+
+        self._col_names.register_new_columns({col_name_list[0]: col_name_list[1]})
+
+        if len(values) != len(self.data):
+            raise_exception(
+                "The length of the added column must match the length of the current data.",
+                AttributeError,
+            )
+
+        self.data[col_name_list[1]] = values
+
     def add_new_columns(self):
         """
         Adds new columns to the DataFrame. Read -> Remove deleted rows -> Join columns

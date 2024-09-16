@@ -13,7 +13,10 @@
 
 # User-defined libs
 from primo.data_parser import WellData
-from primo.utils.project_information_utils import ProjectDescriptor
+from primo.utils.project_information_utils import (
+    EfficiencyCalculator,
+    ProjectDescriptor,
+)
 
 INFO_UNAVAILABLE = "INFO_UNAVAILABLE"
 
@@ -67,7 +70,9 @@ class OptimalProject:
         self.project_info = ProjectDescriptor(
             self._df, project_id, self._col_names, self.num_wells
         )
-        self.project_info.print_project_info()
+        self.project_efficiency = EfficiencyCalculator(wd._construct_sub_data(index))
+        self.project_efficiency.add_centroid_col()
+        # self.project_info.print_project_info()
 
     def __iter__(self):
         return iter(self._df.index)

@@ -11,19 +11,22 @@
 # perform publicly and display publicly, and to permit others to do so.
 #################################################################################
 
+# Standard libs
+import logging
+import sys
+from typing import Union
+
 # Installed libs
 import numpy as np
 
 # User-defined libs
-from primo.data_parser import WellData
+from primo.data_parser import EfficiencyMetrics, WellData
 from primo.utils.geo_utils import get_distance
 from primo.utils.kpi_utils import _check_column_name, calculate_average, calculate_range
-from primo.utils.project_information_utils import (
-    EfficiencyCalculator,
-    ProjectDescriptor,
-)
+from primo.utils.project_information_utils import ProjectDescriptor
 
 INFO_UNAVAILABLE = "INFO_UNAVAILABLE"
+LOGGER = logging.getLogger(__name__)
 
 
 class OptimalProject:
@@ -78,22 +81,7 @@ class OptimalProject:
             self._df, project_id, self._col_names, self.num_wells
         )
         self._add_distance_to_centroid_col()
-        # self.project_efficiency = EfficiencyCalculator(self.well_data)
-        print(self.project_id)
-        print(self.num_wells_near_hospitals)
-        print(self.average_age)
-        print(self.num_wells_near_schools)
-        print(self.average_depth)
-        print(self.age_range)
-        print("Elevation average = ", self.elevation_average)
-        print("Centroid = ", self.centroid)
-        print("Average dist to centroid = ", self.ave_dist_to_centroid)
-        print("Average distance to road = ", self.ave_dist_to_road)
-        print("Number of well owners = ", self.number_of_well_owners)
-        print("Average priority score = ", self.impact_score)
-        print("\n")
-
-        # self.project_info.print_project_info()
+        self.efficiency_score = 0
 
     def __iter__(self):
         return iter(self._df.index)
@@ -160,11 +148,21 @@ class OptimalProject:
         return calculate_average(self.well_data.data, col_name)
 
     @property
-    def elevation_average(self):
+    def depth_range(self):
+        """
+        Returns the range of the depth of the project
+        """
+        col_name = self._col_names.depth
+        self._check_column_exists(col_name)
+        return calculate_range(self.well_data.data, col_name)
+
+    @property
+    def ave_elevation_delta(self):
         """
         Returns the average elevation delta of the project
         """
-        # TODO ensure this column exists!
+        if not hasattr(self._col_names, "elevation_delta"):
+            raise AttributeError("There is no data for the elevation delta")
         col_name = self._col_names.elevation_delta
         self._check_column_exists(col_name)
         return calculate_average(self.well_data.data, col_name, estimation_method="yes")
@@ -193,6 +191,8 @@ class OptimalProject:
         """
         Returns the average distance to the centroid for a project
         """
+        if not hasattr(self._col_names, "dist_centroid"):
+            raise AttributeError("There is no data for the distance to centroid")
         col_name = self._col_names.dist_centroid
         self._check_column_exists(col_name)
         return calculate_average(self.well_data.data, col_name)
@@ -202,12 +202,14 @@ class OptimalProject:
         """
         Returns the average distance to road for a project
         """
+        if not hasattr(self._col_names, "ave_dist_to_road"):
+            raise AttributeError("There is no data for average distance to road")
         col_name = self._col_names.dist_to_road
         self._check_column_exists(col_name)
         return calculate_average(self.well_data.data, col_name)
 
     @property
-    def number_of_well_owners(self):
+    def num_unique_owners(self):
         """
         Returns the number of well owners for a project
         """
@@ -262,6 +264,12 @@ class OptimalProject:
         _check_column_name(self.well_data.data, col_name)
         return self.well_data.data[col_name].max()
 
+    def update_efficiency_score(self, value: Union[int, float]):
+        """
+        Updates the efficiency score of a project
+        """
+        self.efficiency_score += value
+
 
 class OptimalCampaign:
     """
@@ -314,30 +322,190 @@ class OptimalCampaign:
 
         return msg
 
-    def _get_max_num_wells_across_projects(self):
+    def print_project_data(self):
+        for _, project in self.projects.items():
+            print("Project = ", project.project_id)
+            print("Efficiency Score = ", project.efficiency_score)
+            print("Average impact score = ", project.impact_score)
+
+    def get_max_value_across_all_projects(self, attribute: str) -> Union[float, int]:
         """
-        Return the max values of a column across all projects (for efficiency calculation)
+        Returns the max value for an attribute across projects
         """
+        if not hasattr(next(iter(self.projects.values())), attribute):
+            raise AttributeError(
+                "The project does not have the requested attribute: " + attribute
+            )
         return max(
-            [
-                project.return_size_of_col(self.wd.get_col_names().well_id)
-                for _, project in self.projects.items()
-            ]
+            [getattr(project, attribute) for _, project in self.projects.items()]
         )
 
-    def _get_max_num_owners_across_projects(self):
+    def get_min_value_across_all_projects(self, attribute: str) -> Union[float, int]:
         """
-        Return the max number of owners across all projects (for efficiency calculation)
+        Returns the min value for an attribute across projects
         """
-        return max(
-            [
-                len(
-                    set(
-                        project.well_data.data[
-                            self.wd.get_col_names().operator_name
-                        ].values
-                    )
+        if not hasattr(next(iter(self.projects.values())), attribute):
+            raise AttributeError(
+                "The project does not have the requested attribute: " + attribute
+            )
+        return min(
+            [getattr(project, attribute) for _, project in self.projects.items()]
+        )
+
+    def _check_col_in_data(self, col_name):
+        """
+        Checks if the column is in the well data
+        """
+        if col_name not in self.wd.data.columns:
+            raise AttributeError(
+                "The well data does not have " + col_name + " as a column name"
+            )
+
+    def get_max_value_across_all_wells(self, col_name: str) -> Union[float, int]:
+        """
+        Returns the max value for all wells in the data set
+        """
+        self._check_col_in_data(col_name)
+        return max(self.wd.data[col_name].values)
+
+    def get_min_value_across_all_wells(self, col_name: str) -> Union[float, int]:
+        """
+        Returns the max value for all wells in the data set
+        """
+        self._check_col_in_data(col_name)
+        return min(self.wd.data[col_name].values)
+
+
+class EfficiencyCalculator(object):
+    """
+    A class to compute efficiency scores for projects.
+    """
+
+    def __init__(self, campaign: OptimalCampaign):
+        """
+        Constructs the object for all of the efficiency computations for a campaign
+
+        Parameters
+        ----------
+
+        campaign : OptimalCampaign
+            The final campaign for efficiencies to be computed
+
+        """
+        self.campaign = campaign
+        self.efficiency_weights = None
+
+    def set_efficiency_weights(self, eff_metrics: EfficiencyMetrics):
+        """
+        Sets the attribute containing the efficiency weights
+        """
+        self.efficiency_weights = eff_metrics
+
+    def compute_efficiency_attributes_for_all_projects(self):
+        """
+        Computes efficiency attributes for all the projects in the campaign
+        """
+        for _, project in self.campaign.projects.items():
+            self.compute_efficiency_attributes_for_project(project)
+
+    def compute_efficiency_attributes_for_project(self, project):
+        """
+        Adds attributes to each project object with the metric efficiency score
+        """
+        assert self.efficiency_weights is not None
+        self.efficiency_weights.check_validity()
+        project._col_names.check_columns_available(self.efficiency_weights)
+
+        # for obj in self.efficiency_weights:
+        #     print(obj.name)
+        # sys.exit(0)
+        if project.num_wells == 1:
+            # the default efficiency score is 0
+            return
+
+        for metric in self.efficiency_weights:
+            if metric.weight == 0 or hasattr(metric, "submetrics"):
+                # Metric/submetric is not chosen, or
+                # This is a parent metric, so no data assessment is required
+                continue
+
+            LOGGER.info(
+                f"Computing scores for metric/submetric {metric.name}/{metric.full_name}."
+            )
+
+            if metric.name == "ave_dist_to_centroid":
+                # these are hardcoded...they need to be unchangeable
+                max_value = 5
+                min_value = 0
+            elif metric.name == "num_unique_owners":
+                metric.data_col_name = metric.name
+                max_value = self.campaign.get_max_value_across_all_projects(metric.name)
+                min_value = 1
+            elif metric.name == "num_wells":
+                metric.data_col_name = metric.name
+                max_value = self.campaign.get_max_value_across_all_projects(metric.name)
+                min_value = 1
+            else:
+                max_value = self.campaign.get_max_value_across_all_wells(
+                    metric.data_col_name
                 )
-                for _, project in self.projects.items()
+                min_value = self.campaign.get_min_value_across_all_wells(
+                    metric.data_col_name
+                )
+            assert getattr(project, metric.score_attribute, None) is None
+            assert hasattr(project, metric.name)
+
+            # Check if division by a zero is likely
+            if np.isclose(max_value, min_value, rtol=0.001):
+                # All cells in this column have equal value.
+                # To avoid division by zero, set min_value = 0
+                min_value = 0
+
+            if np.isclose(max_value, 0, rtol=0.001):
+                # All values in this column are likely zeros.
+                # To avoid division by zero, set max_value = 1
+                max_value = 1.0
+
+            if metric.has_inverse_priority:
+                setattr(
+                    project,
+                    metric.score_attribute,
+                    (
+                        (max_value - getattr(project, metric.name))
+                        / (max_value - min_value)
+                    )
+                    * metric.effective_weight,
+                )
+
+            else:
+                setattr(
+                    project,
+                    metric.score_attribute,
+                    (
+                        (getattr(project, metric.name) - min_value)
+                        / (max_value - min_value)
+                    )
+                    * metric.effective_weight,
+                )
+
+    def compute_overall_efficiency_scores_project(self, project):
+        """
+        Computes the overall efficiency score for a project
+        """
+        names_attributes = [i for i in dir(project) if "eff_score" in i]
+        assert len(names_attributes) == len(
+            [
+                metric.name
+                for metric in self.efficiency_weights
+                if metric.weight != 0 and not hasattr(metric, "submetric")
             ]
         )
+        for attr in names_attributes:
+            project.update_efficiency_score(getattr(project, attr))
+
+    def compute_overall_efficiency_scores_campaign(self):
+        """
+        Computes the overall efficiency score for all projects in a campaign
+        """
+        for _, project in self.campaign.projects.items():
+            self.compute_overall_efficiency_scores_project(project)

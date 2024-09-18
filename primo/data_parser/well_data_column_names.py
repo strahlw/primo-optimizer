@@ -17,7 +17,7 @@ from dataclasses import InitVar, dataclass
 from typing import Union
 
 # User-defined libs
-from primo.data_parser import ImpactMetrics
+from primo.data_parser.metric_data import SetOfMetrics
 from primo.utils.raise_exception import raise_exception
 
 LOGGER = logging.getLogger(__name__)
@@ -125,7 +125,7 @@ class WellDataColumnNames:
     # pylint: disable = logging-fstring-interpolation
     def check_columns_available(
         self,
-        impact_metrics: ImpactMetrics,
+        metrics: SetOfMetrics,
     ):
         """
         Checks if the required columns are provided based on the
@@ -133,10 +133,10 @@ class WellDataColumnNames:
 
         Parameters
         ----------
-        impact_metrics : ImpactMetrics
-            Impact Metrics object
+        metrics : ImpactMetrics or EfficiencyMetrics
+            SetOfMetrics object
         """
-        im_wt = impact_metrics
+        im_wt = metrics
 
         for obj in im_wt:
             if not hasattr(obj, "_required_data"):

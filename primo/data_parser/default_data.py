@@ -297,6 +297,9 @@ SUPP_IMPACT_METRICS = {
     ),
 }
 
+# note the names of these metrics must be identical to
+# a property of the Optimal Project class for the
+# efficiency calculation
 SUPP_EFF_METRICS = {
     "num_wells": _SupportedContent(
         name="num_wells",
@@ -305,22 +308,32 @@ SUPP_EFF_METRICS = {
     "num_unique_owners": _SupportedContent(
         name="num_unique_owners",
         full_name="Number of Unique Owners",
+        required_data="operator_name",
+        has_inverse_priority=True,
     ),
     "dist_centroid": _SupportedContent(
-        name="dist_centroid",
+        name="ave_dist_to_centroid",
         full_name="Distance to Centroid [miles]",
+        required_data="dist_centroid",
+        has_inverse_priority=True,
     ),
     "elevation_delta": _SupportedContent(
-        name="elevation_delta",
+        name="ave_elevation_delta",
         full_name="Average Elevation Delta [m]",
+        required_data="elevation_delta",
+        has_inverse_priority=True,
     ),
     "age_range": _SupportedContent(
         name="age_range",
         full_name="Age Range [Years]",
+        required_data="age",
+        has_inverse_priority=True,
     ),
     "depth_range": _SupportedContent(
         name="depth_range",
         full_name="Depth Range [ft]",
+        required_data="depth",
+        has_inverse_priority=True,
     ),
     "record_completeness": _SupportedContent(
         name="record_completeness",

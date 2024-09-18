@@ -24,7 +24,7 @@ def test_allowfile_matches_if_present(staged: StagedFile, allowfile: AllowFile):
 
 MAP_PATH_EXPECTED_HARDCODED_DATA_COUNT = {
     "primo/data_parser/data_model.py": 8,
-    "primo/data_parser/default_data.py": 41,
+    "primo/data_parser/default_data.py": 44,
     "primo/data_parser/metric_data.py": 15,
     "primo/data_parser/well_data.py": 40,
     "primo/data_parser/tests/test_metric_data.py": 50,
@@ -36,7 +36,7 @@ MAP_PATH_EXPECTED_HARDCODED_DATA_COUNT = {
     "primo/opt_model/model_options.py": 13,
     "primo/opt_model/model_with_clustering.py": 13,
     "primo/opt_model/opt_model.py": 15,
-    "primo/opt_model/result_parser.py": 4,
+    "primo/opt_model/result_parser.py": 13,
     "primo/opt_model/tests/test_base_model.py": 13,
     "primo/opt_model/tests/test_opt_model.py": 22,
     "primo/utils/__init__.py": 6,

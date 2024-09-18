@@ -12,6 +12,7 @@ from tabulate import tabulate
 # User-defined libs
 from primo.data_parser import ImpactMetrics, WellData, WellDataColumnNames
 from primo.utils.geo_utils import get_distance
+from primo.utils.kpi_utils import calculate_average
 
 
 class ProjectDescriptor(object):
@@ -248,11 +249,16 @@ class EfficiencyCalculator(object):
 
         self.project_data = project_data
         self.col_names = project_data.get_col_names()
+        self.add_centroid_col()
+        self.add_average_age_col()
+        print(self.project_data.data[self.col_names.age])
         # Distance to centroid...need to compute this
         # add centriod to the all of the objects
         # add distance from centroid to all of the objects
         self.relevant_columns = [
             self.col_names.elevation_delta,
+            self.col_names.dist_centroid,
+            self.col_names.dist_to_road,
         ]
 
     def _compute_centroid(self):
@@ -276,8 +282,8 @@ class EfficiencyCalculator(object):
         Adds the distance to centroid column to the well data
         """
         # I am assuming here that apply returns the data in the corresponding order
-        return self.project_data.add_new_column_ordered(
-            ["centroid", "Distance to Centroid [miles]"],
+        self.project_data.add_new_column_ordered(
+            ["dist_centroid", "Distance to Centroid [miles]"],
             self.project_data.data.apply(
                 lambda row: get_distance(
                     (row[self.col_names.latitude], row[self.col_names.longitude]),
@@ -285,4 +291,16 @@ class EfficiencyCalculator(object):
                 ),
                 axis=1,
             ).values,
+        )
+
+    def add_average_age_col(self):
+        """
+        Adds the average age column to the well data
+        """
+        # print(self.project_data.data[self.col_names.age])
+        self.project_data.add_new_column_ordered(
+            ["ave_age", "Average Age [Years]"],
+            self.project_data.data.apply(
+                calculate_average, column_name=self.col_names.age
+            ),
         )

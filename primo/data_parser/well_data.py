@@ -1118,9 +1118,13 @@ class WellData:
                 ) * metric.effective_weight
 
         LOGGER.info("Computing the total priority score.")
-        self.data["Priority Score [0-100]"] = self.data[
-            self.get_priority_score_columns
-        ].sum(axis=1)
+        self.add_new_column_ordered(
+            ["priority_score", "Priority Score [0-100]"],
+            self.data[self.get_priority_score_columns].sum(axis=1),
+        )
+        # self.data["Priority Score [0-100]"] = self.data[
+        #     self.get_priority_score_columns
+        # ].sum(axis=1)
 
         self.check_data_in_range("Priority Score [0-100]", 0.0, 100.0)
         LOGGER.info("Completed the calculation of priority scores.")

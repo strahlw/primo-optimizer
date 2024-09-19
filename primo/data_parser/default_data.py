@@ -313,7 +313,7 @@ SUPP_EFF_METRICS = {
     ),
     "dist_centroid": _SupportedContent(
         name="ave_dist_to_centroid",
-        full_name="Distance to Centroid [miles]",
+        full_name="Average Distance to Centroid [miles]",
         required_data="dist_centroid",
         has_inverse_priority=True,
     ),

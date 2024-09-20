@@ -342,12 +342,6 @@ class OptimalCampaign:
         """
         return sum([project.plugging_cost for _, project in self.projects.items()])
 
-    def print_project_data(self):
-        for _, project in self.projects.items():
-            print("Project = ", project.project_id)
-            print("Efficiency Score = ", project.efficiency_score)
-            print("Average impact score = ", project.impact_score)
-
     def get_max_value_across_all_projects(self, attribute: str) -> Union[float, int]:
         """
         Returns the max value for an attribute across projects

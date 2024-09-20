@@ -304,8 +304,6 @@ class OptimalCampaign:
         """
         # for now include a pointer to well data, so that I have column names
         self.wd = wd
-
-        self._clusters_dict = clusters_dict
         self.projects = {}
 
         index = 1
@@ -478,7 +476,7 @@ class OptimalCampaign:
         # the format of the string is name_eff_score_0_10
         upper_range = attribute_name.split("0_")[-1]
         name = attribute_name.split("eff_score")[0][:-1]
-        return f"{name} Score [0 - {upper_range}]"
+        return f"{name} Score [0-{upper_range}]"
 
     def get_efficiency_metrics(self):
         """
@@ -519,8 +517,8 @@ class OptimalCampaign:
         header = [
             "Project ID",
             "Number of Wells",
-            "Impact Score [0 - 100]",
-            "Efficiency Score [0 - 100]",
+            "Impact Score [0-100]",
+            "Efficiency Score [0-100]",
         ]
         return pd.DataFrame(rows, columns=header)
 
@@ -581,7 +579,7 @@ class OptimalCampaign:
             )
             start_row += len(wells_df) + 2  # Add one line spacing after each table
 
-        # add the campaign summary
+        # add the caDmpaign summary
         self.get_campaign_summary().to_excel(
             excel_writer, sheet_name=campaign_category + "Project Scores", index=False
         )

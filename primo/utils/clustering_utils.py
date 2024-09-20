@@ -26,7 +26,6 @@ from primo.utils.raise_exception import raise_exception
 LOGGER = logging.getLogger(__name__)
 
 
-# pylint: disable = protected-access
 def distance_matrix(wd: WellData, weights: dict) -> np.ndarray:
     """
     Generate a distance matrix based on the given features and
@@ -52,7 +51,7 @@ def distance_matrix(wd: WellData, weights: dict) -> np.ndarray:
     ValueError
         1. if a spurious feature's weight is included apart from
             distance, age, and depth.
-        2. if the sum of feature weights does not equal 1;
+        2. if the sum of feature weights does not equal 1.
     """
 
     # If a feature is not provided, then set its weight to zero
@@ -70,26 +69,29 @@ def distance_matrix(wd: WellData, weights: dict) -> np.ndarray:
     if not np.isclose(wt_dist + wt_depth + wt_age, 1, rtol=0.001):
         raise_exception("Feature weights do not add up to 1.", ValueError)
 
-    candidates = wd.data
-    cn = wd._col_names  # Column names
+    # Construct the matrices only if the weights are non-zero
+    cn = wd.col_names  # Column names
+    coordinates = list(zip(wd[cn.latitude], wd[cn.longitude]))
+    dist_matrix = (
+        haversine_vector(coordinates, coordinates, unit=Unit.MILES, comb=True)
+        if wt_dist > 0
+        else 0
+    )
 
-    coordinates = list(zip(candidates[cn.latitude], candidates[cn.longitude]))
-    distance_matrix = haversine_vector(
-        coordinates,
-        coordinates,
-        unit=Unit.MILES,
-        comb=True,
+    age_range_matrix = (
+        np.abs(np.subtract.outer(wd[cn.age].to_numpy(), wd[cn.age].to_numpy()))
+        if wt_age > 0
+        else 0
     )
-    age_range_matrix = np.abs(
-        np.subtract.outer(candidates[cn.age].to_numpy(), candidates[cn.age].to_numpy())
+
+    depth_range_matrix = (
+        np.abs(np.subtract.outer(wd[cn.depth].to_numpy(), wd[cn.depth].to_numpy()))
+        if wt_depth > 0
+        else 0
     )
-    depth_range_matrix = np.abs(
-        np.subtract.outer(
-            candidates[cn.depth].to_numpy(), candidates[cn.depth].to_numpy()
-        )
-    )
+
     return (
-        wt_dist * distance_matrix
+        wt_dist * dist_matrix
         + wt_age * age_range_matrix
         + wt_depth * depth_range_matrix
     )
@@ -109,7 +111,7 @@ def perform_clustering(wd: WellData, distance_threshold: float = 10.0):
     n_clusters : int
         Returns number of clusters
     """
-    if hasattr(wd._col_names, "cluster"):
+    if hasattr(wd.col_names, "cluster"):
         # Clustering has already been performed, so return.
         # Return number of cluster.
         LOGGER.warning(
@@ -119,11 +121,14 @@ def perform_clustering(wd: WellData, distance_threshold: float = 10.0):
             "different name for the attribute cluster while instantiating the "
             "WellDataColumnNames object."
         )
-        return len(set(wd.data[wd._col_names.cluster]))
+        return len(set(wd[wd.col_names.cluster]))
 
     # Hard-coding the weights data since this should not be a tunable parameter
-    # for users. Move to args if it is desired to make it tunable.
-    weights = {"distance": 0.9899, "age": 0.01, "depth": 0.0001}
+    # for users. Move to arguments if it is desired to make it tunable.
+    # TODO: Need to scale each metric appropriately. Since good scaling
+    # factors are not available right now, setting the weights of age and depth
+    # as zero.
+    weights = {"distance": 1, "age": 0, "depth": 0}
 
     distance_metric = distance_matrix(wd, weights)
     clustered_data = AgglomerativeClustering(
@@ -135,8 +140,8 @@ def perform_clustering(wd: WellData, distance_threshold: float = 10.0):
 
     wd.data["Clusters"] = clustered_data.labels_
     # Uncomment the line below to convert labels to strings. Keeping them as
-    # ints for convenience.
+    # integers for convenience.
     # wd.data["Clusters"] = "Cluster " + wd.data["Clusters"].astype(str)
-    wd._col_names.register_new_columns({"cluster": "Clusters"})
+    wd.col_names.register_new_columns({"cluster": "Clusters"})
 
     return clustered_data.n_clusters_

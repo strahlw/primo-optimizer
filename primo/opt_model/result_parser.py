@@ -26,7 +26,6 @@ from primo.data_parser import EfficiencyMetrics, WellData
 from primo.utils.geo_utils import get_distance
 from primo.utils.kpi_utils import _check_column_name, calculate_average, calculate_range
 
-INFO_UNAVAILABLE = "INFO_UNAVAILABLE"
 LOGGER = logging.getLogger(__name__)
 
 
@@ -59,7 +58,6 @@ class OptimalProject:
         # was not available, and the missing data was filled. Having the entire
         # DataFrame allows ease of access to flagged wells (columns containing _flag)
         self.well_data = wd._construct_sub_data(index)
-        self._df = wd.data.loc[index]
         self._col_names = self.well_data._col_names
         col_names = self._col_names
         self.project_id = project_id
@@ -83,7 +81,7 @@ class OptimalProject:
         self.efficiency_score = 0
 
     def __iter__(self):
-        return iter(self._df.index)
+        return iter(self.well_data.data.index)
 
     def __str__(self) -> str:
         msg = (
@@ -99,7 +97,7 @@ class OptimalProject:
         Checks if a column exists
         """
         if col_name is None:
-            return INFO_UNAVAILABLE
+            raise ValueError(f"Information for column {col_name} is not available.")
 
     @property
     def num_wells_near_hospitals(self):
@@ -238,10 +236,6 @@ class OptimalProject:
             ).values,
         )
 
-    def return_size_of_col(self, col_name):
-        """Returns the size of the column for the project"""
-        return len(self._df[col_name])
-
     def get_max_val_col(self, col_name) -> float:
         """
         Returns the maximum value of a column
@@ -328,6 +322,7 @@ class OptimalCampaign:
         }
 
         self.num_projects = len(self.projects)
+        self.efficiency_calculator = EfficiencyCalculator(self)
 
     def __str__(self) -> str:
         msg = (
@@ -596,6 +591,18 @@ class OptimalCampaign:
         self.get_campaign_summary().to_excel(
             excel_writer, sheet_name=campaign_category + "Project Scores", index=False
         )
+
+    def set_efficiency_weights(self, eff_metrics: EfficiencyMetrics):
+        """
+        Wrapper for the EfficiencyCalculator set_efficiency_weights method
+        """
+        self.efficiency_calculator.set_efficiency_weights(eff_metrics)
+
+    def compute_efficiency_scores(self):
+        """
+        Wrapper for the EfficiencyCalculator compute efficiency scores method
+        """
+        self.efficiency_calculator.compute_efficiency_scores()
 
 
 class EfficiencyCalculator(object):

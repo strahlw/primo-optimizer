@@ -13,6 +13,7 @@
 
 # Standard libs
 import logging
+from typing import Dict, Optional
 
 # Installed libs
 from pyomo.core.base.block import BlockData, declare_custom_block
@@ -35,16 +36,16 @@ from primo.opt_model.result_parser import OptimalCampaign
 LOGGER = logging.getLogger(__name__)
 
 
-def build_cluster_model(m, c):
+def build_cluster_model(model_block, cluster):
     """
-    Builds the model (adds essential variables and constraints)
-    for a given cluster c
+    Builds the model block (adds essential variables and constraints)
+    for a given cluster `cluster`
     """
     # Parameters are located in the parent block
-    params = m.parent_block().model_inputs
+    params = model_block.parent_block().model_inputs
     wd = params.config.well_data
-    well_index = params.campaign_candidates[c]
-    pairwise_distance = params.pairwise_distance[c]
+    well_index = params.campaign_candidates[cluster]
+    pairwise_distance = params.pairwise_distance[cluster]
     # pairwise_age_range = params.pairwise_age_range[c]
     # pairwise_depth_range = params.pairwise_depth_range[c]
 
@@ -64,39 +65,39 @@ def build_cluster_model(m, c):
     well_pairs_keep = [key for key in pairwise_distance if key not in well_pairs_remove]
 
     # Essential model sets
-    m.set_wells = Set(
+    model_block.set_wells = Set(
         initialize=well_index,
         doc="Set of wells in cluster c",
     )
-    m.set_wells_dac = Set(
+    model_block.set_wells_dac = Set(
         initialize=well_dac,
         doc="Set of wells that are in disadvantaged communities",
     )
-    m.set_well_pairs_remove = Set(
+    model_block.set_well_pairs_remove = Set(
         initialize=well_pairs_remove,
         doc="Well-pairs which cannot be a part of the project",
     )
-    m.set_well_pairs_keep = Set(
+    model_block.set_well_pairs_keep = Set(
         initialize=well_pairs_keep,
         doc="Well-pairs which can be a part of the project",
     )
 
     # Essential variables
-    m.select_cluster = Var(
+    model_block.select_cluster = Var(
         within=Binary,
         doc="1, if wells from the cluster are chosen for plugging, 0 Otherwise",
     )
-    m.select_well = Var(
-        m.set_wells,
+    model_block.select_well = Var(
+        model_block.set_wells,
         within=Binary,
         doc="1, if the well is selected for plugging, 0 otherwise",
     )
-    m.num_wells_var = Var(
-        range(1, len(m.set_wells) + 1),
+    model_block.num_wells_var = Var(
+        range(1, len(model_block.set_wells) + 1),
         within=Binary,
         doc="Variables to track the total number of wells chosen",
     )
-    m.plugging_cost = Var(
+    model_block.plugging_cost = Var(
         within=NonNegativeReals,
         doc="Total cost for plugging wells in this cluster",
     )
@@ -104,98 +105,121 @@ def build_cluster_model(m, c):
     # Although the following two variables are of type Integer, they
     # can be declared as continuous. The optimal solution is guaranteed to have
     # integer values.
-    m.num_wells_chosen = Var(
+    model_block.num_wells_chosen = Var(
         within=NonNegativeReals,
         doc="Total number of wells chosen in the project",
     )
-    m.num_wells_dac = Var(
+    model_block.num_wells_dac = Var(
         within=NonNegativeReals,
         doc="Number of wells chosen in disadvantaged communities",
     )
 
     # Set the maximum cost and size of the project: default is None.
-    m.plugging_cost.setub(params.get_max_cost_project)
-    m.num_wells_chosen.setub(params.config.max_size_project)
+    model_block.plugging_cost.setub(params.get_max_cost_project)
+    model_block.num_wells_chosen.setub(params.config.max_size_project)
 
     # Useful expressions
-    priority_score = wd.data["Priority Score [0-100]"]
-    m.cluster_priority_score = Expression(
-        expr=(sum(priority_score[w] * m.select_well[w] for w in m.set_wells)),
+    priority_score = wd["Priority Score [0-100]"]
+    model_block.cluster_priority_score = Expression(
+        expr=(
+            sum(
+                priority_score[w] * model_block.select_well[w]
+                for w in model_block.set_wells
+            )
+        ),
         doc="Computes the total priority score for the cluster",
     )
 
     # Essential constraints
-    m.calculate_num_wells_chosen = Constraint(
-        expr=(sum(m.select_well[w] for w in m.set_wells) == m.num_wells_chosen),
+    model_block.calculate_num_wells_chosen = Constraint(
+        expr=(
+            sum(model_block.select_well[w] for w in model_block.set_wells)
+            == model_block.num_wells_chosen
+        ),
         doc="Calculate the total number of wells chosen",
     )
-    m.calculate_num_wells_in_dac = Constraint(
-        expr=(sum(m.select_well[w] for w in m.set_wells_dac) == m.num_wells_dac),
+    model_block.calculate_num_wells_in_dac = Constraint(
+        expr=(
+            sum(model_block.select_well[w] for w in model_block.set_wells_dac)
+            == model_block.num_wells_dac
+        ),
         doc="Calculate the number of wells chosen that are in dac",
     )
 
     # This is to test which formulation is faster. If there is no
     # benefit in terms of computational time, then delete this method.
     if params.config.num_wells_model_type == "incremental":
-        num_wells_incremental_formulation(m)
+        num_wells_incremental_formulation(model_block)
         return
 
     # Using the multicommodity formulation
     mob_cost = params.get_mobilization_cost
-    m.calculate_plugging_cost = Constraint(
+    model_block.calculate_plugging_cost = Constraint(
         expr=(
-            sum(mob_cost[i] * m.num_wells_var[i] for i in m.num_wells_var)
-            == m.plugging_cost
+            sum(
+                mob_cost[i] * model_block.num_wells_var[i]
+                for i in model_block.num_wells_var
+            )
+            == model_block.plugging_cost
         ),
         doc="Calculates the total plugging cost for the cluster",
     )
-    m.campaign_length = Constraint(
+    model_block.campaign_length = Constraint(
         expr=(
-            sum(i * m.num_wells_var[i] for i in m.num_wells_var) == m.num_wells_chosen
+            sum(i * model_block.num_wells_var[i] for i in model_block.num_wells_var)
+            == model_block.num_wells_chosen
         ),
         doc="Determines the number of wells chosen",
     )
-    m.num_well_uniqueness = Constraint(
-        expr=(sum(m.num_wells_var[i] for i in m.num_wells_var) == m.select_cluster),
+    model_block.num_well_uniqueness = Constraint(
+        expr=(
+            sum(model_block.num_wells_var[i] for i in model_block.num_wells_var)
+            == model_block.select_cluster
+        ),
         doc="Ensures at most one num_wells_var is selected",
     )
 
 
-def num_wells_incremental_formulation(m):
+def num_wells_incremental_formulation(model_block):
     """
     Models the number of wells constraint using the incremental cost
     formulation.
     """
-    mob_cost = m.parent_block().model_inputs.get_mobilization_cost
-    m.calculate_plugging_cost = Constraint(
+    mob_cost = model_block.parent_block().model_inputs.get_mobilization_cost
+    model_block.calculate_plugging_cost = Constraint(
         expr=(
-            mob_cost[1] * m.num_wells_var[1]
+            mob_cost[1] * model_block.num_wells_var[1]
             + sum(
-                (mob_cost[i] - mob_cost[i - 1]) * m.num_wells_var[i]
-                for i in m.num_wells_var
+                (mob_cost[i] - mob_cost[i - 1]) * model_block.num_wells_var[i]
+                for i in model_block.num_wells_var
                 if i != 1
             )
-            == m.plugging_cost
+            == model_block.plugging_cost
         ),
         doc="Calculates the total plugging cost for the cluster",
     )
-    m.campaign_length = Constraint(
-        expr=(sum(m.num_wells_var[i] for i in m.num_wells_var) == m.num_wells_chosen),
+    model_block.campaign_length = Constraint(
+        expr=(
+            sum(model_block.num_wells_var[i] for i in model_block.num_wells_var)
+            == model_block.num_wells_chosen
+        ),
         doc="Computes the number of wells chosen",
     )
 
-    @m.Constraint(
-        m.num_wells_var.index_set(),
+    @model_block.Constraint(
+        model_block.num_wells_var.index_set(),
         doc="Ordering num_wells_var variables",
     )
-    def ordering_num_wells_vars(b, i):
-        if i == 1:
-            return b.num_wells_var[i] == b.select_cluster
+    def ordering_num_wells_vars(model_block, well_idx):
+        if well_idx == 1:
+            return model_block.num_wells_var[well_idx] == model_block.select_cluster
 
-        return b.num_wells_var[i] <= b.num_wells_var[i - 1]
+        return (
+            model_block.num_wells_var[well_idx]
+            <= model_block.num_wells_var[well_idx - 1]
+        )
 
 
-# pylint: disable = trailing-whitespace, attribute-defined-outside-init
 @declare_custom_block("ClusterBlock")
 class ClusterBlockData(BlockData):
     """
@@ -215,39 +239,48 @@ class ClusterBlockData(BlockData):
         super().deactivate()
         self.select_cluster.fix(0)
         self.plugging_cost.fix(0)
+        self.num_wells_dac.fix(0)
         self.num_wells_chosen.fix(0)
 
     def activate(self):
         super().activate()
         self.select_cluster.unfix()
-        self.pluggin_cost.unfix()
+        self.plugging_cost.unfix()
+        self.num_wells_dac.unfix()
         self.num_wells_chosen.unfix()
 
-    def fix(self, cluster=1, wells=None):
+    def fix(
+        self,
+        cluster: Optional[int] = None,
+        wells: Optional[Dict[int, int]] = None,
+    ):
         """
         Fixes the binary variables associated with the cluster
-        and/or the wells with in the cluster.
+        and/or the wells with in the cluster. To fix all variables
+        within the cluster, use the fix_all_vars() method.
 
         Parameters
         ----------
-        cluster : 0 or 1, default = 1
+        cluster : 0 or 1, default = None
             `select_cluster` variable will be fixed to this value.
+            If None, select_cluster will be fixed to its incumbent value.
 
         wells : dict, default = None
             key => index of the well, value => value of `select_well`
             binary variable.
         """
-        # Fix the cluster binary variable
-        self.select_cluster.fix(cluster)
+        if cluster is None:
+            # Nothing is specified, so fixing it to its incumbent value
+            self.select_cluster.fix()
 
-        if wells is None:
-            # Well binary variables are not selected, so return
-            return
+        elif cluster in [0, 1]:
+            self.select_cluster.fix(cluster)
 
-        # Need to fix a few wells within the cluster
-        for w in self.set_wells:
-            if w in wells:
-                self.select_well.fix(wells[w])
+        if wells is not None:
+            # Need to fix a few wells within the cluster
+            for w in self.set_wells:
+                if w in wells:
+                    self.select_well.fix(wells[w])
 
     def unfix(self):
         """
@@ -390,6 +423,57 @@ class PluggingCampaignModel(ConcreteModel):
                 if blk.select_well[w].value > 0.95:
                     # Well w is chosen, so store it in the dict
                     optimal_campaign[c].append(w)
+
         # Well data
+        # TODO: Uncomment when result_parser.py is completed
         wd = self.model_inputs.config.well_data
         return OptimalCampaign(wd, optimal_campaign, plugging_cost)
+
+    def get_solution_pool(self, solver):
+        """
+        Extracts solutions from the solution pool
+
+        Parameters
+        ----------
+        solver : Pyomo solver object
+        """
+        pm = self  # This is the pyomo model
+        # pylint: disable=protected-access
+        gm = solver._solver_model  # This is the gurobipy model
+        # Get Pyomo var to Gurobipy var map.
+        # Gurobi vars can be accessed as pm_to_gm[<pyomo var>]
+        pm_to_gm = solver._pyomo_var_to_solver_var_map
+
+        # Number of solutions found
+        num_solutions = gm.SolCount
+        solution_pool = {}
+        # Well data
+        # wd = self.model_inputs.config.well_data
+
+        for i in range(num_solutions):
+            gm.Params.SolutionNumber = i
+
+            optimal_campaign = {}
+            plugging_cost = {}
+
+            for c in pm.set_clusters:
+                blk = pm.cluster[c]
+                if pm_to_gm[blk.select_cluster].Xn < 0.05:
+                    # Cluster c is not chosen, so continue
+                    continue
+
+                # Wells in cluster c are chosen
+                optimal_campaign[c] = []
+                plugging_cost[c] = pm_to_gm[blk.plugging_cost].Xn
+                for w in blk.set_wells:
+                    if pm_to_gm[blk.select_well[w]].Xn > 0.95:
+                        # Well w is chosen, so store it in the dict
+                        optimal_campaign[c].append(w)
+
+            # TODO: Uncomment the following lines after result_parser is merged
+            # solution_pool[i + 1] = OptimalCampaign(
+            #     wd=wd, clusters_dict=optimal_campaign, plugging_cost=plugging_cost
+            # )
+            solution_pool[i + 1] = (optimal_campaign, plugging_cost)
+
+        return solution_pool

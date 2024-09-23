@@ -79,6 +79,12 @@ class OptimalProject:
         self.plugging_cost = plugging_cost * 1e6
         self._add_distance_to_centroid_col()
         self.efficiency_score = 0
+        accessibility_column_attr = ["elevation_delta", "dist_to_road"]
+        self.accessibility_attr = [
+            attribute
+            for attribute in accessibility_column_attr
+            if hasattr(col_names, attribute)
+        ]
 
     def __iter__(self):
         return iter(self.well_data.data.index)
@@ -196,7 +202,7 @@ class OptimalProject:
         """
         Returns the average distance to road for a project
         """
-        if not hasattr(self._col_names, "ave_dist_to_road"):
+        if not hasattr(self._col_names, "dist_to_road"):
             raise AttributeError("There is no data for average distance to road")
         col_name = self._col_names.dist_to_road
         self._check_column_exists(col_name)
@@ -219,6 +225,26 @@ class OptimalProject:
         col_name = self._col_names.priority_score
         self._check_column_exists(col_name)
         return calculate_average(self.well_data.data, col_name)
+
+    @property
+    def accessibility_score(self):
+        """
+        Returns the accessibility score and the total weight of the accessibility score for a project
+        """
+        names_attributes = [i for i in dir(self) if "eff_score" in i]
+        names_attributes_accessibility = [
+            name
+            for name in names_attributes
+            if any([name2 in name for name2 in self.accessibility_attr])
+        ]
+        if len(names_attributes_accessibility) == 0:
+            return None
+        total_weight = sum(
+            int(name.split("_0_")[-1]) for name in names_attributes_accessibility
+        )
+        return total_weight, sum(
+            getattr(self, attribute) for attribute in names_attributes_accessibility
+        )
 
     def _add_distance_to_centroid_col(self):
         """
@@ -270,14 +296,6 @@ class OptimalProject:
         Returns the data frame to display in the notebook
         """
         return self.well_data.data[self._essential_cols]
-
-    def compute_accessibility_score(self):
-        """
-        Returns the accessibility score of a project
-        """
-        accessibility_criteria = ["ave_elevation_delta", "ave_dist_to_road"]
-        # TODO currently average distance to road is not supported...
-        return
 
 
 class OptimalCampaign:
@@ -492,12 +510,23 @@ class OptimalCampaign:
             for attribute in names_attributes
         ]
 
-        data = list(zip(project_column, *attribute_data))
+        # accessibility score
+        total_weights, accessibility_data = map(
+            list,
+            zip(*[project.accessibility_score for _, project in self.projects.items()]),
+        )
 
         header = ["Project ID"] + [
             self._extract_column_header_for_efficiency_metrics(attr)
             for attr in names_attributes
         ]
+
+        # if there is data for the accessibility score
+        if all(datum is not None for datum in accessibility_data):
+            data = list(zip(project_column, *attribute_data, accessibility_data))
+            header.append(f"Accessibility Score [0-{total_weights[0]}]")
+        else:
+            data = list(zip(project_column, *attribute_data))
 
         return pd.DataFrame(data, columns=header)
 
@@ -579,7 +608,7 @@ class OptimalCampaign:
             )
             start_row += len(wells_df) + 2  # Add one line spacing after each table
 
-        # add the caDmpaign summary
+        # add the campaign summary
         self.get_campaign_summary().to_excel(
             excel_writer, sheet_name=campaign_category + "Project Scores", index=False
         )
@@ -644,9 +673,6 @@ class EfficiencyCalculator(object):
         self.efficiency_weights.check_validity()
         project._col_names.check_columns_available(self.efficiency_weights)
 
-        # for obj in self.efficiency_weights:
-        #     print(obj.name)
-        # sys.exit(0)
         if project.num_wells == 1:
             # the default efficiency score is 0
             return

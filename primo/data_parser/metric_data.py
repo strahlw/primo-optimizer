@@ -297,22 +297,23 @@ class SetOfMetrics:
     def __init__(
         self, supported_metrics: Optional[Dict[str, _SupportedContent]] = None
     ):
-        for val in supported_metrics.values():
-            if not val.is_submetric:
-                self.register_new_metric(
-                    name=val.name,
-                    full_name=val.full_name,
-                )
+        if supported_metrics is not None:
+            for val in supported_metrics.values():
+                if not val.is_submetric:
+                    self.register_new_metric(
+                        name=val.name,
+                        full_name=val.full_name,
+                    )
 
-            else:
-                self.register_new_submetric(
-                    name=val.name,
-                    parent_metric=getattr(self, val.parent_metric),
-                    full_name=val.full_name,
-                )
-            metric = getattr(self, val.name)
-            metric._required_data = val.required_data
-            metric.has_inverse_priority = val.has_inverse_priority
+                else:
+                    self.register_new_submetric(
+                        name=val.name,
+                        parent_metric=getattr(self, val.parent_metric),
+                        full_name=val.full_name,
+                    )
+                metric = getattr(self, val.name)
+                metric._required_data = val.required_data
+                metric.has_inverse_priority = val.has_inverse_priority
         return
 
     def __iter__(self):

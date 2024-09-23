@@ -42,7 +42,7 @@ MAP_PATH_EXPECTED_HARDCODED_DATA_COUNT = {
     "primo/opt_model/tests/test_base_model.py": 13,
     "primo/opt_model/tests/test_model_options.py": 129,
     "primo/opt_model/tests/test_opt_model.py": 22,
-    "primo/opt_model/tests/test_result_parser.py": 278,
+    "primo/opt_model/tests/test_result_parser.py": 300,
     "primo/utils/__init__.py": 6,
     "primo/utils/age_depth_estimation.py": 18,
     "primo/utils/census_utils.py": 12,

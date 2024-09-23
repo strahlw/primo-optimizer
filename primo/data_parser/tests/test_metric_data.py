@@ -50,6 +50,7 @@ def test_metric_class(caplog):
 
     assert z.data_col_name is None
     assert z.score_col_name is None
+    assert z.score_attribute is None
 
     assert z.is_binary_type is False
     assert z.has_inverse_priority is False
@@ -438,17 +439,18 @@ def test_efficiency_metrics_class():
 
     assert hasattr(ef_wt, "num_wells")
     assert hasattr(ef_wt, "num_unique_owners")
-    assert hasattr(ef_wt, "dist_centroid")
-    assert hasattr(ef_wt, "elevation_delta")
+    assert hasattr(ef_wt, "ave_dist_to_centroid")
+    assert hasattr(ef_wt, "ave_elevation_delta")
     assert hasattr(ef_wt, "age_range")
     assert hasattr(ef_wt, "depth_range")
     assert hasattr(ef_wt, "record_completeness")
-    assert len(ef_wt.get_primary_metrics) == 7
+    assert hasattr(ef_wt, "ave_dist_to_road")
+    assert len(ef_wt.get_primary_metrics) == 8
 
     ef_wt.set_weight(
         {
             "num_wells": 20,
-            "dist_centroid": 30,
+            "ave_dist_to_centroid": 30,
             "age_range": 20,
             "depth_range": 30,
         }

@@ -592,11 +592,17 @@ def test_compute_priority_scores(
     )
 
     # Test errors thrown by the method
-    wd_df = pd.read_csv(filename, usecols=col_names.values())
+    # with efficiency refactoring, the priority score is added as an attribute to the well column name object
+    wd_df = pd.read_csv(
+        filename, usecols=[col for col in col_names.values() if "Priority" not in col]
+    )
 
     # Set a non-numeric value
     wd_df[col_names.hospitals] = wd_df[col_names.hospitals].astype("object")
     wd_df.loc[250, col_names.hospitals] = "NULL"
+    # we now add the priority score column to the object when we compute
+    col_names.priority_score = None
+
     wd = WellData(data=wd_df, column_names=col_names)
     with pytest.raises(
         ValueError,
@@ -614,7 +620,11 @@ def test_compute_priority_scores(
     im_metrics.dac_impact.weight = 0
     im_metrics.fed_dac.weight = 0
 
-    wd_df = pd.read_csv(filename, usecols=col_names.values())
+    wd_df = pd.read_csv(
+        filename, usecols=[col for col in col_names.values() if "Priority" not in col]
+    )
+    # have to reset the column added by computing the priority score
+    col_names.priority_score = None
     wd = WellData(data=wd_df, column_names=col_names)
     with pytest.raises(
         ValueError,

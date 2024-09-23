@@ -339,4 +339,10 @@ SUPP_EFF_METRICS = {
         name="record_completeness",
         full_name="Record Completeness",
     ),
+    "dist_to_road": _SupportedContent(
+        name="ave_dist_to_road",
+        full_name="Distance to Road [miles]",
+        required_data="dist_to_road",
+        has_inverse_priority=True,
+    ),
 }

@@ -153,6 +153,25 @@ def get_eff_metrics():
     return eff_metrics
 
 
+@pytest.fixture
+def get_eff_metrics_accessibility():
+    eff_metrics = EfficiencyMetrics()
+    eff_metrics.set_weight(
+        primary_metrics={
+            "num_wells": 10,
+            "ave_dist_to_centroid": 30,
+            "ave_elevation_delta": 20,
+            "age_range": 10,
+            "depth_range": 20,
+            "ave_dist_to_road": 10,
+        }
+    )
+
+    # Check validity of the metrics
+    eff_metrics.check_validity()
+    return eff_metrics
+
+
 # test OptimalProject Class
 
 
@@ -179,8 +198,7 @@ def test_project_attributes(get_project):
         )
         / 2
     )
-    with pytest.raises(AttributeError):
-        project.ave_dist_to_road == 3
+    project.ave_dist_to_road == 1.5
     assert project.num_unique_owners == 2
     assert project.impact_score == 38.25
 
@@ -227,9 +245,23 @@ def test_get_well_info_data_frame(get_project):
     assert all(i in [1, 2] for i in well_data["Age [Years]"].values)
 
 
-def test_compute_accessibility_score(get_project):
-    # TODO implement
-    assert get_project.compute_accessibility_score() is None
+def test_compute_accessibility_score(get_campaign, get_eff_metrics_accessibility):
+    # this can only be called after the efficiency scores have been assigned
+    get_campaign.set_efficiency_weights(get_eff_metrics_accessibility)
+    get_campaign.efficiency_calculator.compute_efficiency_scores()
+    project = get_campaign.projects[1]
+    assert project.accessibility_score == (
+        30,
+        pytest.approx((6 - 1.5) / 5 * 20 + (6 - 1.5) / 5 * 10),
+    )
+
+
+def test_compute_accessibility_score_2(get_campaign, get_eff_metrics):
+    # this can only be called after the efficiency scores have been assigned
+    get_campaign.set_efficiency_weights(get_eff_metrics)
+    get_campaign.efficiency_calculator.compute_efficiency_scores()
+    project = get_campaign.projects[1]
+    assert project.accessibility_score == (20, pytest.approx((6 - 1.5) / 5 * 20))
 
 
 def test_project_str(get_project):
@@ -411,6 +443,7 @@ def test_get_efficiency_metrics(get_efficiency_calculator):
     campaign = get_efficiency_calculator
     campaign.efficiency_calculator.compute_efficiency_scores()
     efficiency_metric_output = campaign.get_efficiency_metrics()
+    print(efficiency_metric_output.columns)
     assert all(
         i
         in [
@@ -420,6 +453,7 @@ def test_get_efficiency_metrics(get_efficiency_calculator):
             "ave_elevation_delta Score [0-20]",
             "age_range Score [0-10]",
             "depth_range Score [0-20]",
+            "Accessibility Score [0-20]",
         ]
         for i in efficiency_metric_output.columns
     )

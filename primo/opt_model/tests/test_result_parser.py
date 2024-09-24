@@ -532,6 +532,8 @@ def test_compute_efficiency_score_edge_cases(
     assert all(
         ["num_wells_eff_score" not in entry for entry in dir(get_campaign.projects[1])]
     )
+    with pytest.raises(AttributeError):
+        get_campaign.project[1].ave_elevation_delta
 
 
 def test_single_well(get_minimal_campaign, get_efficiency_metrics_minimal):

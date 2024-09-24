@@ -202,7 +202,7 @@ def test_well_data(caplog, get_column_names):
         wd.add_new_column_ordered(["One entry"], new_column)
     badly_sized_column = np.ones(len(wd.data) - 1)
     with pytest.raises(AttributeError):
-        wd.add_new_column_ordered(["ones, col_of_ones"], badly_sized_column)
+        wd.add_new_column_ordered(["ones", "col_of_ones"], badly_sized_column)
 
 
 def test_get_well_column_names(get_column_names):

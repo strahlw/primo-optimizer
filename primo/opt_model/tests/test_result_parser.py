@@ -15,6 +15,7 @@ import os
 
 # Installed libs
 import matplotlib.pyplot as plt
+import numpy as np
 import pandas as pd
 import pytest
 
@@ -544,8 +545,11 @@ def test_zeros(get_minimal_campaign, get_efficiency_metrics_minimal):
     get_minimal_campaign.projects[1].well_data.data["Age [Years]"] = [0, 0]
     get_minimal_campaign.projects[2].well_data.data["Age [Years]"] = [0, 0]
     get_minimal_campaign.projects[3].well_data.data["Age [Years]"] = [0]
+    get_minimal_campaign.wd.data["Age [Years]"] = np.zeros(
+        len(get_minimal_campaign.wd.data["Age [Years]"])
+    )
     get_minimal_campaign.efficiency_calculator.compute_efficiency_scores()
-    assert get_minimal_campaign.projects[1].age_range_eff_score_0_10 == 12.0
+    assert get_minimal_campaign.projects[1].age_range_eff_score_0_10 == 10.0
 
 
 def test_compute_efficiency_attributes_for_project(get_efficiency_calculator):

@@ -289,6 +289,8 @@ class OptimalProject:
         value : Union[int, float]
             The value to update the efficiency score with
         """
+        if len(self.well_data) == 1:
+            return
         self.efficiency_score += value
 
     def get_well_info_dataframe(self):
@@ -500,6 +502,7 @@ class OptimalCampaign:
         """
         Returns a data frame with the different efficiency scores for the projects
         """
+        # TODO What to do with single well projects
 
         project_column = [project.project_id for _, project in self.projects.items()]
 
@@ -510,21 +513,25 @@ class OptimalCampaign:
             for attribute in names_attributes
         ]
 
-        # accessibility score
-        total_weights, accessibility_data = map(
-            list,
-            zip(*[project.accessibility_score for _, project in self.projects.items()]),
-        )
-
         header = ["Project ID"] + [
             self._extract_column_header_for_efficiency_metrics(attr)
             for attr in names_attributes
         ]
 
-        # if there is data for the accessibility score
-        if all(datum is not None for datum in accessibility_data):
+        if self.projects[1].accessibility_score is not None:
+            # accessibility score
+            total_weights, accessibility_data = map(
+                list,
+                zip(
+                    *[
+                        project.accessibility_score
+                        for _, project in self.projects.items()
+                    ]
+                ),
+            )
             data = list(zip(project_column, *attribute_data, accessibility_data))
             header.append(f"Accessibility Score [0-{total_weights[0]}]")
+        # if there is data for the accessibility score
         else:
             data = list(zip(project_column, *attribute_data))
 
@@ -672,10 +679,6 @@ class EfficiencyCalculator(object):
         assert self.efficiency_weights is not None
         self.efficiency_weights.check_validity()
         project._col_names.check_columns_available(self.efficiency_weights)
-
-        if project.num_wells == 1:
-            # the default efficiency score is 0
-            return
 
         for metric in self.efficiency_weights:
             if metric.weight == 0 or hasattr(metric, "submetrics"):

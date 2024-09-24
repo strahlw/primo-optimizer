@@ -28,6 +28,7 @@ from primo.opt_model.model_with_clustering import (  # pylint: disable=no-name-i
     IndexedClusterBlock,
     PluggingCampaignModel,
 )
+from primo.opt_model.result_parser import OptimalCampaign, OptimalProject
 
 LOGGER = logging.getLogger(__name__)
 
@@ -179,12 +180,12 @@ def test_opt_model_inputs(get_column_names):
 
     assert isinstance(opt_mdl, PluggingCampaignModel)
     assert isinstance(solver, SCIPAMPL)
-    assert isinstance(opt_campaign, tuple)
-    assert isinstance(opt_campaign[0], dict)
-    assert isinstance(opt_campaign[1], dict)
+    assert isinstance(opt_campaign, OptimalCampaign)
+    assert isinstance(opt_campaign.projects[1], OptimalProject)
+    # assert isinstance(opt_campaign[1], dict)
 
     # Four projects are chosen in the optimal campaign
-    assert len(opt_campaign[0]) == 4
+    assert len(opt_campaign.projects) == 4
 
     # Test the structure of the optimization model
     num_clusters = len(set(wd_gas["Clusters"]))
@@ -309,12 +310,12 @@ def test_incremental_formulation(get_column_names):
     opt_campaign = opt_mdl_inputs.solve_model(solver="scip")
 
     assert isinstance(opt_mdl, PluggingCampaignModel)
-    assert isinstance(opt_campaign, tuple)
-    assert isinstance(opt_campaign[0], dict)
-    assert isinstance(opt_campaign[1], dict)
+    assert isinstance(opt_campaign, OptimalCampaign)
+    assert isinstance(opt_campaign.projects[1], OptimalProject)
+    # assert isinstance(opt_campaign[1], dict)
 
     # Four projects are chosen in the optimal campaign
-    assert len(opt_campaign[0]) == 4
+    assert len(opt_campaign.projects) == 4
 
     # Check if the required constraints are defined
     assert hasattr(opt_mdl.cluster[1], "calculate_num_wells_chosen")

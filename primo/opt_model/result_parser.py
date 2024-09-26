@@ -666,7 +666,7 @@ class EfficiencyCalculator(object):
             LOGGER.info(f"Computing efficiency scores for project {project.project_id}")
             self.compute_efficiency_attributes_for_project(project)
 
-    def compute_efficiency_attributes_for_project(self, project):
+    def compute_efficiency_attributes_for_project(self, project: OptimalProject):
         """
         Adds attributes to each project object with the metric efficiency score
 
@@ -745,7 +745,7 @@ class EfficiencyCalculator(object):
                     * metric.effective_weight,
                 )
 
-    def compute_overall_efficiency_scores_project(self, project):
+    def compute_overall_efficiency_scores_project(self, project: OptimalProject):
         """
         Computes the overall efficiency score for a project
 
@@ -762,6 +762,7 @@ class EfficiencyCalculator(object):
                 if metric.weight != 0 and not hasattr(metric, "submetric")
             ]
         )
+        LOGGER.info("Computing overall efficiency score")
         for attr in names_attributes:
             project.update_efficiency_score(getattr(project, attr))
 
@@ -792,7 +793,7 @@ def export_data_to_excel(
     ----------
     output_file_path : str
         The path to the output file
-    campaigns : List[OptimalCampaigns]
+    campaigns : List[OptimalCampaign]
         A list of campaigns to output data for
     campaign_categories : List[str]
         A list of labels corresponding to the campaigns in the campaigns argument

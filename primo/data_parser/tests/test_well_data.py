@@ -507,7 +507,7 @@ def test_compute_priority_scores(
             },
         },
     )
-
+    wd._set_metric(im_metrics)
     wd.compute_priority_scores(impact_metrics=im_metrics)
 
     # Check warning messages
@@ -635,6 +635,7 @@ def test_compute_priority_scores(
             f"contains non-numeric values in rows \\[250\\]."
         ),
     ):
+        wd._set_metric(im_metrics)
         wd.compute_priority_scores(im_metrics)
 
     # Error raised when the data for an unsupported metric is missing
@@ -655,4 +656,5 @@ def test_compute_priority_scores(
             "is not provided."
         ),
     ):
+        wd._set_metric(im_metrics)
         wd.compute_priority_scores(im_metrics)

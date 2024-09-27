@@ -662,9 +662,6 @@ class EfficiencyCalculator(object):
 
         """
         assert self.efficiency_weights is not None
-        self.efficiency_weights.check_validity()
-        project._col_names.check_columns_available(self.efficiency_weights)
-
         for metric in self.efficiency_weights:
             if metric.weight == 0 or hasattr(metric, "submetrics"):
                 # Metric/submetric is not chosen, or
@@ -694,6 +691,7 @@ class EfficiencyCalculator(object):
                 min_value = self.campaign.get_min_value_across_all_wells(
                     metric.data_col_name
                 )
+
             assert getattr(project, metric.score_attribute, None) is None
             assert hasattr(project, metric.name)
 

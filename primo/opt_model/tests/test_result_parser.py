@@ -126,6 +126,8 @@ def get_campaign():
 
     well_data = WellData(pd.DataFrame(data), col_names)
 
+    well_data._set_metric(im_metrics)
+
     well_data.compute_priority_scores(impact_metrics=im_metrics)
 
     return OptimalCampaign(
@@ -221,6 +223,8 @@ def get_minimal_campaign():
     }
 
     well_data = WellData(pd.DataFrame(data), col_names)
+
+    well_data._set_metric(im_metrics)
 
     well_data.compute_priority_scores(impact_metrics=im_metrics)
 
@@ -363,6 +367,7 @@ def test_get_well_info_data_frame(get_project):
 
 def test_compute_accessibility_score(get_campaign, get_eff_metrics_accessibility):
     # this can only be called after the efficiency scores have been assigned
+    get_campaign.wd._set_metric(get_eff_metrics_accessibility)
     get_campaign.set_efficiency_weights(get_eff_metrics_accessibility)
     get_campaign.efficiency_calculator.compute_efficiency_scores()
     project = get_campaign.projects[1]
@@ -377,6 +382,7 @@ def test_compute_accessibility_score(get_campaign, get_eff_metrics_accessibility
 
 def test_compute_accessibility_score_2(get_campaign, get_eff_metrics):
     # this can only be called after the efficiency scores have been assigned
+    get_campaign.wd._set_metric(get_eff_metrics)
     get_campaign.set_efficiency_weights(get_eff_metrics)
     get_campaign.efficiency_calculator.compute_efficiency_scores()
     project = get_campaign.projects[1]
@@ -498,6 +504,7 @@ def test_set_efficiency_weights(get_campaign, get_eff_metrics):
 
 @pytest.fixture()
 def get_efficiency_calculator(get_campaign, get_eff_metrics):
+    get_campaign.wd._set_metric(get_eff_metrics)
     get_campaign.set_efficiency_weights(get_eff_metrics)
     return get_campaign
 
@@ -523,6 +530,7 @@ def get_efficiency_metrics_minimal():
 def test_compute_efficiency_score_edge_cases(
     get_minimal_campaign, get_efficiency_metrics_minimal
 ):
+    get_minimal_campaign.wd._set_metric(get_efficiency_metrics_minimal)
     get_minimal_campaign.set_efficiency_weights(get_efficiency_metrics_minimal)
     get_minimal_campaign.efficiency_calculator.compute_efficiency_scores()
     assert all(
@@ -536,12 +544,14 @@ def test_compute_efficiency_score_edge_cases(
 
 
 def test_single_well(get_minimal_campaign, get_efficiency_metrics_minimal):
+    get_minimal_campaign.wd._set_metric(get_efficiency_metrics_minimal)
     get_minimal_campaign.set_efficiency_weights(get_efficiency_metrics_minimal)
     get_minimal_campaign.efficiency_calculator.compute_efficiency_scores()
     assert get_minimal_campaign.projects[3].efficiency_score == 0
 
 
 def test_zeros(get_minimal_campaign, get_efficiency_metrics_minimal):
+    get_minimal_campaign.wd._set_metric(get_efficiency_metrics_minimal)
     get_minimal_campaign.set_efficiency_weights(get_efficiency_metrics_minimal)
     get_minimal_campaign.projects[1].well_data.data["Age [Years]"] = [0, 0]
     get_minimal_campaign.projects[2].well_data.data["Age [Years]"] = [0, 0]

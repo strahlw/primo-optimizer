@@ -302,8 +302,7 @@ SUPP_IMPACT_METRICS = {
 # efficiency calculation
 SUPP_EFF_METRICS = {
     "num_wells": _SupportedContent(
-        name="num_wells",
-        full_name="Number of Wells",
+        name="num_wells", full_name="Number of Wells", required_data="well_id"
     ),
     "num_unique_owners": _SupportedContent(
         name="num_unique_owners",

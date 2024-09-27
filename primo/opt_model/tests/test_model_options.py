@@ -138,6 +138,7 @@ def test_opt_model_inputs(get_column_names):
 
     # Compute priority scores
     # Test the model and options
+    wd_gas._set_metric(im_metrics)
     wd_gas.compute_priority_scores(impact_metrics=im_metrics)
 
     assert "Clusters" not in wd_gas
@@ -295,6 +296,7 @@ def test_incremental_formulation(get_column_names):
         mobilization_cost[n_wells] = n_wells * 84000
 
     # Test the model and options
+    wd_gas._set_metric(im_metrics)
     wd_gas.compute_priority_scores(impact_metrics=im_metrics)
 
     opt_mdl_inputs = OptModelInputs(

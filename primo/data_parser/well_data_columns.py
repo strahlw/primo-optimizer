@@ -136,6 +136,10 @@ class WellDataColumnNames:  # pylint: disable=too-many-instance-attributes
         im_wt = impact_metrics
 
         for obj in im_wt:
+            # the centroid can only be computed after optimization
+            if obj.name == "avg_dist_to_centroid":
+                obj.data_col_name = col_name
+                continue
             if not hasattr(obj, "_required_data"):
                 # This is not a supported metric, so continue
                 LOGGER.warning(

@@ -271,6 +271,12 @@ def get_eff_metrics_accessibility():
     return eff_metrics
 
 
+def test_check_column_exists(get_project):
+    get_project._col_names.hospitals = None
+    with pytest.raises(ValueError):
+        print(get_project.num_wells_near_hospitals)
+
+
 # test OptimalProject Class
 def test_project_attributes(get_project):
     project = get_project
@@ -300,6 +306,9 @@ def test_project_attributes(get_project):
     project.avg_dist_to_road == 1.5
     assert project.num_unique_owners == 2
     assert project.impact_score == 38.25
+    delattr(project._col_names, "priority_score")
+    with pytest.raises(AttributeError):
+        project.impact_score == 2.0
 
 
 def test_project_attributes_minimal(get_minimal_campaign):

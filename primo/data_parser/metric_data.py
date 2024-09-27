@@ -92,7 +92,7 @@ class Metric:  # pylint: disable=too-many-instance-attributes
         self.data_col_name = None
         # Name of the column that contains the priority score
         self._score_col_name = None
-        # Name of the project attribute that contains the priority score
+        # Name of the project attribute that contains the efficiency score
         self._score_attribute = None
 
         # Value to fill with, if the data needed for the analysis of this metric
@@ -314,6 +314,10 @@ class SetOfMetrics:
                 metric = getattr(self, val.name)
                 metric._required_data = val.required_data
                 metric.has_inverse_priority = val.has_inverse_priority
+                if val.fill_missing_value is not None:
+                    metric = getattr(self, val.name)
+                    metric._configure_fill_missing_value(**val.fill_missing_value)
+
         return
 
     def __iter__(self):
@@ -696,10 +700,6 @@ class ImpactMetrics(SetOfMetrics):
             impact_metrics = SUPP_IMPACT_METRICS
 
         super().__init__(impact_metrics)
-        for val in impact_metrics.values():
-            if val.fill_missing_value is not None:
-                metric = getattr(self, val.name)
-                metric._configure_fill_missing_value(**val.fill_missing_value)
 
 
 class EfficiencyMetrics(SetOfMetrics):

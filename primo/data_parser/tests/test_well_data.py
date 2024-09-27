@@ -218,7 +218,6 @@ def test_get_well_column_names(get_column_names):
         threshold_oil_production=2,
         threshold_depth=2000,
     )
-    assert wd.get_col_names() == col_names
 
 
 def test_no_warnings(caplog, get_column_names):

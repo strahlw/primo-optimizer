@@ -22,15 +22,6 @@ from pandas.api.types import is_numeric_dtype
 from primo.utils.raise_exception import raise_exception
 
 
-def _check_column_name(data: pd.DataFrame, col_name: str):
-    """
-    Checks if the column name exists in a pandas dataframe
-    """
-    if col_name not in data.columns:
-        msg = f"column: {col_name} not found in DataFrame"
-        raise_exception(msg, ValueError)
-
-
 def _is_numeric_valid_column(
     group: pd.DataFrame, column_name: str, estimation_method="no"
 ):

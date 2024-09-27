@@ -21,7 +21,6 @@ from pandas.testing import assert_frame_equal
 
 # User-defined libs
 from primo.utils.kpi_utils import (
-    _check_column_name,
     calculate_average,
     calculate_number_of_owners,
     calculate_range,
@@ -110,9 +109,6 @@ def test_core_calculation_methods(
 ):
 
     well_df = pd.DataFrame(well_data)
-
-    with pytest.raises(ValueError):
-        _check_column_name(well_df, "Orphaned well")
 
     # Tests for calculate_average_priority_score
     result = calculate_average(well_df, column_name="Priority Score [0-100]")

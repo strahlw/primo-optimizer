@@ -977,9 +977,6 @@ class WellData:
             ["priority_score", "Priority Score [0-100]"],
             self.data[self.get_priority_score_columns].sum(axis=1),
         )
-        # self.data["Priority Score [0-100]"] = self.data[
-        #     self.get_priority_score_columns
-        # ].sum(axis=1)
 
         self.check_data_in_range("Priority Score [0-100]", 0.0, 100.0)
         LOGGER.info("Completed the calculation of priority scores.")
@@ -1005,9 +1002,3 @@ class WellData:
                 f"Format {extension} is not supported.",
                 ValueError,
             )
-
-    def get_col_names(self):
-        """
-        Returns the WellDataColumnNames object associated with the WellData object
-        """
-        return self._col_names

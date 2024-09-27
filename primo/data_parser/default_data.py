@@ -311,14 +311,14 @@ SUPP_EFF_METRICS = {
         required_data="operator_name",
         has_inverse_priority=True,
     ),
-    "dist_centroid": _SupportedContent(
-        name="ave_dist_to_centroid",
+    "avg_dist_to_centroid": _SupportedContent(
+        name="avg_dist_to_centroid",
         full_name="Average Distance to Centroid [miles]",
         required_data="dist_centroid",
         has_inverse_priority=True,
     ),
-    "elevation_delta": _SupportedContent(
-        name="ave_elevation_delta",
+    "avg_elevation_delta": _SupportedContent(
+        name="avg_elevation_delta",
         full_name="Average Elevation Delta [m]",
         required_data="elevation_delta",
         has_inverse_priority=True,
@@ -339,8 +339,8 @@ SUPP_EFF_METRICS = {
         name="record_completeness",
         full_name="Record Completeness",
     ),
-    "dist_to_road": _SupportedContent(
-        name="ave_dist_to_road",
+    "avg_dist_to_road": _SupportedContent(
+        name="avg_dist_to_road",
         full_name="Distance to Road [miles]",
         required_data="dist_to_road",
         has_inverse_priority=True,

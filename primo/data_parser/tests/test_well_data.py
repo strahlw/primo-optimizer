@@ -465,18 +465,6 @@ def test_compute_priority_scores(
     caplog, get_column_names
 ):  # pylint: disable=too-many-statements
     filename, col_names = get_column_names
-
-    wd = WellData(
-        data=filename,
-        column_names=col_names,
-        fill_age=99,
-        fill_depth=999,
-        fill_life_gas_production=1.5,
-        fill_life_oil_production=1.5,
-        threshold_gas_production=2,
-        threshold_oil_production=2,
-    )
-
     im_metrics = ImpactMetrics()
     im_metrics.set_weight(
         primary_metrics={
@@ -507,8 +495,19 @@ def test_compute_priority_scores(
             },
         },
     )
-    wd._set_metric(im_metrics)
-    wd.compute_priority_scores(impact_metrics=im_metrics)
+    wd = WellData(
+        data=filename,
+        column_names=col_names,
+        fill_age=99,
+        fill_depth=999,
+        fill_life_gas_production=1.5,
+        fill_life_oil_production=1.5,
+        threshold_gas_production=2,
+        threshold_oil_production=2,
+        impact_metrics=im_metrics,
+    )
+
+    wd.compute_priority_scores()
 
     # Check warning messages
     assert f"Found empty cells in column {col_names.leak}" in caplog.text
@@ -625,7 +624,6 @@ def test_compute_priority_scores(
     # we now add the priority score column to the object when we compute
     col_names.priority_score = None
 
-    wd = WellData(data=wd_df, column_names=col_names)
     with pytest.raises(
         ValueError,
         match=(
@@ -635,8 +633,8 @@ def test_compute_priority_scores(
             f"contains non-numeric values in rows \\[250\\]."
         ),
     ):
-        wd._set_metric(im_metrics)
-        wd.compute_priority_scores(im_metrics)
+        wd = WellData(data=wd_df, column_names=col_names, impact_metrics=im_metrics)
+        wd.compute_priority_scores()
 
     # Error raised when the data for an unsupported metric is missing
     im_metrics.register_new_metric("my_metric", 5, "My Custom Metric")
@@ -648,7 +646,6 @@ def test_compute_priority_scores(
     )
     # have to reset the column added by computing the priority score
     col_names.priority_score = None
-    wd = WellData(data=wd_df, column_names=col_names)
     with pytest.raises(
         ValueError,
         match=(
@@ -656,5 +653,5 @@ def test_compute_priority_scores(
             "is not provided."
         ),
     ):
-        wd._set_metric(im_metrics)
-        wd.compute_priority_scores(im_metrics)
+        wd = WellData(data=wd_df, column_names=col_names, impact_metrics=im_metrics)
+        wd.compute_priority_scores()

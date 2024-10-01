@@ -439,20 +439,18 @@ def test_efficiency_metrics_class():
 
     assert hasattr(ef_wt, "num_wells")
     assert hasattr(ef_wt, "num_unique_owners")
-    assert hasattr(ef_wt, "avg_dist_to_centroid")
     assert hasattr(ef_wt, "avg_elevation_delta")
     assert hasattr(ef_wt, "age_range")
     assert hasattr(ef_wt, "depth_range")
     assert hasattr(ef_wt, "record_completeness")
     assert hasattr(ef_wt, "avg_dist_to_road")
-    assert len(ef_wt.get_primary_metrics) == 8
+    assert len(ef_wt.get_primary_metrics) == 7
 
     ef_wt.set_weight(
         {
             "num_wells": 20,
-            "avg_dist_to_centroid": 30,
             "age_range": 20,
-            "depth_range": 30,
+            "depth_range": 60,
         }
     )
     assert ef_wt.check_validity() is None

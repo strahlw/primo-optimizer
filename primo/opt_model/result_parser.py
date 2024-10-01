@@ -110,21 +110,21 @@ class OptimalProject:
         """Returns number of wells that are near hospitals"""
         col_name = self._col_names.hospitals
         self._check_column_exists(col_name)
-        return len(self.well_data.data[self.well_data.data[col_name] > 0].index)
+        return len(self.well_data[self.well_data[col_name] > 0].index)
 
     @property
     def num_wells_near_schools(self):
         """Returns number of wells that are near schools"""
         col_name = self._col_names.schools
         self._check_column_exists(col_name)
-        return len(self.well_data.data[self.well_data.data[col_name] > 0].index)
+        return len(self.well_data[self.well_data[col_name] > 0].index)
 
     @property
     def average_age(self):
         """
         Returns average age of the wells in the project
         """
-        return self.well_data.data[self._col_names.age].mean()
+        return self.well_data[self._col_names.age].mean()
 
     @property
     def age_range(self):
@@ -132,8 +132,8 @@ class OptimalProject:
         Returns the range of the age of the project
         """
         return (
-            self.well_data.data[self._col_names.age].max()
-            - self.well_data.data[self._col_names.age].min()
+            self.well_data[self._col_names.age].max()
+            - self.well_data[self._col_names.age].min()
         )
 
     @property
@@ -141,7 +141,7 @@ class OptimalProject:
         """
         Returns the average depth of the project
         """
-        return self.well_data.data[self._col_names.depth].mean()
+        return self.well_data[self._col_names.depth].mean()
 
     @property
     def depth_range(self):
@@ -149,8 +149,8 @@ class OptimalProject:
         Returns the range of the depth of the project
         """
         return (
-            self.well_data.data[self._col_names.depth].max()
-            - self.well_data.data[self._col_names.depth].min()
+            self.well_data[self._col_names.depth].max()
+            - self.well_data[self._col_names.depth].min()
         )
 
     @property
@@ -158,8 +158,8 @@ class OptimalProject:
         """
         Returns the average elevation delta of the project
         """
-        if not hasattr(self._col_names, "elevation_delta"):
-            raise AttributeError("There is no data for the elevation delta")
+        col_name = self._col_names.elevation_delta
+        self._check_column_exists(col_name)
         return calculate_average(
             self.well_data.data,
             self._col_names.elevation_delta,
@@ -184,21 +184,12 @@ class OptimalProject:
         )
 
     @property
-    def avg_dist_to_centroid(self):
-        """
-        Returns the average distance to the centroid for a project
-        """
-        if not hasattr(self._col_names, "dist_centroid"):
-            raise AttributeError("There is no data for the distance to centroid")
-        return calculate_average(self.well_data.data, self._col_names.dist_centroid)
-
-    @property
     def avg_dist_to_road(self):
         """
         Returns the average distance to road for a project
         """
-        if not hasattr(self._col_names, "dist_to_road"):
-            raise AttributeError("There is no data for average distance to road")
+        col_name = self._col_names.dist_to_road
+        self._check_column_exists(col_name)
         return calculate_average(self.well_data.data, self._col_names.dist_to_road)
 
     @property
@@ -208,7 +199,7 @@ class OptimalProject:
         """
         col_name = self._col_names.operator_name
         self._check_column_exists(col_name)
-        return len(set(self.well_data.data[col_name].values))
+        return len(set(self.well_data[col_name].values))
 
     @property
     def impact_score(self):
@@ -219,7 +210,7 @@ class OptimalProject:
             raise AttributeError(
                 "The priority score has not been computed for the Well Data"
             )
-        return self.well_data.data[self._col_names.priority_score].mean()
+        return self.well_data[self._col_names.priority_score].mean()
 
     @property
     def accessibility_score(self):
@@ -272,7 +263,7 @@ class OptimalProject:
             the maximum value of the column
 
         """
-        return self.well_data.data[col_name].max()
+        return self.well_data[col_name].max()
 
     def update_efficiency_score(self, value: Union[int, float]):
         """
@@ -291,7 +282,7 @@ class OptimalProject:
         """
         Returns the data frame to display in the notebook
         """
-        return self.well_data.data[self._essential_cols]
+        return self.well_data[self._essential_cols]
 
 
 class OptimalCampaign:
@@ -399,7 +390,7 @@ class OptimalCampaign:
             name of the column containing the values of interest
 
         """
-        return max(self.wd.data[col_name].values)
+        return max(self.wd[col_name].values)
 
     def get_min_value_across_all_wells(self, col_name: str) -> Union[float, int]:
         """
@@ -410,7 +401,7 @@ class OptimalCampaign:
         col_name : str
             name of the column containing the values of interest
         """
-        return min(self.wd.data[col_name].values)
+        return min(self.wd[col_name].values)
 
     def plot_campaign(self, title: str):
         """
@@ -440,8 +431,8 @@ class OptimalCampaign:
         ax = plt.gca()
         for _, project in self.projects.items():
             ax.scatter(
-                project.well_data.data[project._col_names.latitude],
-                project.well_data.data[project._col_names.longitude],
+                project.well_data[project._col_names.latitude],
+                project.well_data[project._col_names.longitude],
             )
         plt.title(title)
         plt.xlabel("x-coordinate of wells")
@@ -672,11 +663,7 @@ class EfficiencyCalculator(object):
                 f"Computing scores for metric/submetric {metric.name}/{metric.full_name}."
             )
 
-            if metric.name == "avg_dist_to_centroid":
-                # these are hardcoded...they need to be unchangeable
-                max_value = 5
-                min_value = 0
-            elif metric.name == "num_unique_owners":
+            if metric.name == "num_unique_owners":
                 metric.data_col_name = metric.name
                 max_value = self.campaign.get_max_value_across_all_projects(metric.name)
                 min_value = 1

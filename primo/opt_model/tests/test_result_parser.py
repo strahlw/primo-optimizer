@@ -92,10 +92,8 @@ def get_campaign():
         ann_gas_production="Gas [Mcf/Year]",
         ann_oil_production="Oil [bbl/Year]",
         # These are user-specific columns
-        additional_columns={
-            "elevation_delta": "Elevation Delta [m]",
-            "dist_to_road": "Distance to Road [miles]",
-        },
+        elevation_delta="Elevation Delta [m]",
+        dist_to_road="Distance to Road [miles]",
     )
 
     data = {
@@ -124,11 +122,9 @@ def get_campaign():
         "Number of Nearby Schools": {0: 1, 1: 1, 2: 2, 3: 2, 4: 3, 5: 3},
     }
 
-    well_data = WellData(pd.DataFrame(data), col_names)
+    well_data = WellData(pd.DataFrame(data), col_names, impact_metrics=im_metrics)
 
-    well_data._set_metric(im_metrics)
-
-    well_data.compute_priority_scores(impact_metrics=im_metrics)
+    well_data.compute_priority_scores()
 
     return OptimalCampaign(
         well_data, {2: [0, 1], 3: [2, 3], 4: [4, 5]}, {2: 10, 3: 15, 4: 20}
@@ -222,11 +218,9 @@ def get_minimal_campaign():
         "Number of Nearby Schools": {0: 1, 1: 1, 2: 2, 3: 2, 4: 3, 5: 3},
     }
 
-    well_data = WellData(pd.DataFrame(data), col_names)
+    well_data = WellData(pd.DataFrame(data), col_names, impact_metrics=im_metrics)
 
-    well_data._set_metric(im_metrics)
-
-    well_data.compute_priority_scores(impact_metrics=im_metrics)
+    well_data.compute_priority_scores()
 
     return OptimalCampaign(
         well_data, {2: [0, 1], 3: [2, 3], 4: [4]}, {2: 10, 3: 15, 4: 20}
@@ -244,7 +238,7 @@ def get_eff_metrics():
     eff_metrics.set_weight(
         primary_metrics={
             "num_wells": 20,
-            "avg_dist_to_centroid": 30,
+            "num_unique_owners": 30,
             "avg_elevation_delta": 20,
             "age_range": 10,
             "depth_range": 20,
@@ -262,7 +256,7 @@ def get_eff_metrics_accessibility():
     eff_metrics.set_weight(
         primary_metrics={
             "num_wells": 10,
-            "avg_dist_to_centroid": 30,
+            "num_unique_owners": 30,
             "avg_elevation_delta": 20,
             "age_range": 10,
             "depth_range": 20,
@@ -299,14 +293,6 @@ def test_project_attributes(get_project):
     assert project.depth_range == 1
     assert project.avg_elevation_delta == 1.5
     assert project.centroid == (0.999885, 1.954185)
-    assert (
-        project.avg_dist_to_centroid
-        == (
-            get_distance((0.99982, 1.95117), (0.999885, 1.954185))
-            + get_distance((0.99995, 1.9572), (0.999885, 1.954185))
-        )
-        / 2
-    )
     project.avg_dist_to_road == 1.5
     assert project.num_unique_owners == 2
     assert project.impact_score == 38.25
@@ -319,23 +305,11 @@ def test_project_attributes_minimal(get_minimal_campaign):
     project = get_minimal_campaign.projects[1]
 
     # checking for missing attributes
-    with pytest.raises(AttributeError):
+    with pytest.raises(ValueError):
         project.avg_dist_to_road
 
-    with pytest.raises(AttributeError):
-        project.avg_elevation_data
-
-    delattr(project._col_names, "dist_centroid")
-    with pytest.raises(AttributeError):
-        project.avg_dist_to_centroid
-
-
-def test_add_distance_to_centroid_col(get_project):
-    project = get_project
-    assert "dist_centroid" in project._col_names
-    assert project.well_data.data["Distance to Centroid [miles]"].values[
-        0
-    ] == get_distance((0.99982, 1.95117), (0.999885, 1.954185))
+    with pytest.raises(ValueError):
+        project.avg_elevation_delta
 
 
 def test_max_val_col(get_project):
@@ -367,7 +341,9 @@ def test_get_well_info_data_frame(get_project):
 
 def test_compute_accessibility_score(get_campaign, get_eff_metrics_accessibility):
     # this can only be called after the efficiency scores have been assigned
-    get_campaign.wd._set_metric(get_eff_metrics_accessibility)
+    get_campaign.wd.set_impact_and_efficiency_metrics(
+        efficiency_metrics=get_eff_metrics_accessibility
+    )
     get_campaign.set_efficiency_weights(get_eff_metrics_accessibility)
     get_campaign.efficiency_calculator.compute_efficiency_scores()
     project = get_campaign.projects[1]
@@ -382,7 +358,9 @@ def test_compute_accessibility_score(get_campaign, get_eff_metrics_accessibility
 
 def test_compute_accessibility_score_2(get_campaign, get_eff_metrics):
     # this can only be called after the efficiency scores have been assigned
-    get_campaign.wd._set_metric(get_eff_metrics)
+    get_campaign.wd.set_impact_and_efficiency_metrics(
+        efficiency_metrics=get_eff_metrics
+    )
     get_campaign.set_efficiency_weights(get_eff_metrics)
     get_campaign.efficiency_calculator.compute_efficiency_scores()
     project = get_campaign.projects[1]
@@ -504,7 +482,9 @@ def test_set_efficiency_weights(get_campaign, get_eff_metrics):
 
 @pytest.fixture()
 def get_efficiency_calculator(get_campaign, get_eff_metrics):
-    get_campaign.wd._set_metric(get_eff_metrics)
+    get_campaign.wd.set_impact_and_efficiency_metrics(
+        efficiency_metrics=get_eff_metrics
+    )
     get_campaign.set_efficiency_weights(get_eff_metrics)
     return get_campaign
 
@@ -515,9 +495,8 @@ def get_efficiency_metrics_minimal():
     eff_metrics.set_weight(
         primary_metrics={
             "num_wells": 0,
-            "avg_dist_to_centroid": 30,
-            "age_range": 10,
-            "depth_range": 20,
+            "age_range": 30,
+            "depth_range": 30,
             "num_unique_owners": 40,
         }
     )
@@ -530,7 +509,9 @@ def get_efficiency_metrics_minimal():
 def test_compute_efficiency_score_edge_cases(
     get_minimal_campaign, get_efficiency_metrics_minimal
 ):
-    get_minimal_campaign.wd._set_metric(get_efficiency_metrics_minimal)
+    get_minimal_campaign.wd.set_impact_and_efficiency_metrics(
+        efficiency_metrics=get_efficiency_metrics_minimal
+    )
     get_minimal_campaign.set_efficiency_weights(get_efficiency_metrics_minimal)
     get_minimal_campaign.efficiency_calculator.compute_efficiency_scores()
     assert all(
@@ -539,19 +520,23 @@ def test_compute_efficiency_score_edge_cases(
             for entry in dir(get_minimal_campaign.projects[1])
         ]
     )
-    with pytest.raises(AttributeError):
+    with pytest.raises(ValueError):
         get_minimal_campaign.projects[1].avg_elevation_delta
 
 
 def test_single_well(get_minimal_campaign, get_efficiency_metrics_minimal):
-    get_minimal_campaign.wd._set_metric(get_efficiency_metrics_minimal)
+    get_minimal_campaign.wd.set_impact_and_efficiency_metrics(
+        efficiency_metrics=get_efficiency_metrics_minimal
+    )
     get_minimal_campaign.set_efficiency_weights(get_efficiency_metrics_minimal)
     get_minimal_campaign.efficiency_calculator.compute_efficiency_scores()
     assert get_minimal_campaign.projects[3].efficiency_score == 0
 
 
 def test_zeros(get_minimal_campaign, get_efficiency_metrics_minimal):
-    get_minimal_campaign.wd._set_metric(get_efficiency_metrics_minimal)
+    get_minimal_campaign.wd.set_impact_and_efficiency_metrics(
+        efficiency_metrics=get_efficiency_metrics_minimal
+    )
     get_minimal_campaign.set_efficiency_weights(get_efficiency_metrics_minimal)
     get_minimal_campaign.projects[1].well_data.data["Age [Years]"] = [0, 0]
     get_minimal_campaign.projects[2].well_data.data["Age [Years]"] = [0, 0]
@@ -560,7 +545,7 @@ def test_zeros(get_minimal_campaign, get_efficiency_metrics_minimal):
         len(get_minimal_campaign.wd.data["Age [Years]"])
     )
     get_minimal_campaign.efficiency_calculator.compute_efficiency_scores()
-    assert get_minimal_campaign.projects[1].age_range_eff_score_0_10 == 10.0
+    assert get_minimal_campaign.projects[1].age_range_eff_score_0_30 == 30.0
 
 
 def test_compute_efficiency_attributes_for_project(get_efficiency_calculator):
@@ -568,7 +553,7 @@ def test_compute_efficiency_attributes_for_project(get_efficiency_calculator):
     project = campaign.projects[1]
     campaign.efficiency_calculator.compute_efficiency_attributes_for_project(project)
     assert project.num_wells_eff_score_0_20 == 20.0
-    assert project.avg_dist_to_centroid_eff_score_0_30 == pytest.approx(28.74999)
+    assert project.num_unique_owners_eff_score_0_30 == pytest.approx(0.0)
     assert project.avg_elevation_delta_eff_score_0_20 == pytest.approx(
         (6 - 1.5) / 5 * 20
     )
@@ -582,7 +567,7 @@ def test_compute_overall_efficiency_scores_project(get_efficiency_calculator):
     campaign.efficiency_calculator.compute_efficiency_attributes_for_project(project)
     campaign.efficiency_calculator.compute_overall_efficiency_scores_project(project)
     assert project.efficiency_score == pytest.approx(
-        20 + 28.74999 + (6 - 1.5) / 5 * 20 + 10 + 20
+        20 + 0 + (6 - 1.5) / 5 * 20 + 10 + 20
     )
 
 
@@ -591,7 +576,7 @@ def test_compute_efficiency_attributes_for_all_projects(get_efficiency_calculato
     campaign.efficiency_calculator.compute_efficiency_attributes_for_all_projects()
     for _, project in campaign.projects.items():
         assert project.num_wells_eff_score_0_20 >= 0.0
-        assert project.avg_dist_to_centroid_eff_score_0_30 >= 0.0
+        assert project.num_unique_owners_eff_score_0_30 >= 0.0
         assert project.avg_elevation_delta_eff_score_0_20 >= 0.0
         assert project.age_range_eff_score_0_10 >= 0.0
         assert project.depth_range_eff_score_0_20 >= 0.0
@@ -622,7 +607,7 @@ def test_get_efficiency_metrics(get_efficiency_calculator):
         in [
             "Project ID",
             "Num Wells Score [0-20]",
-            "Avg Dist To Centroid Score [0-30]",
+            "Num Unique Owners Score [0-30]",
             "Avg Elevation Delta Score [0-20]",
             "Age Range Score [0-10]",
             "Depth Range Score [0-20]",
@@ -631,10 +616,11 @@ def test_get_efficiency_metrics(get_efficiency_calculator):
         for i in efficiency_metric_output.columns
     )
     assert len(efficiency_metric_output) == 3
+
     assert all(
         [
             list(efficiency_metric_output.iloc[0, :].values)[i]
-            == pytest.approx([2, 10.0, 28.74999, (6 - 1.5) / 5 * 20, 20, 20][i])
+            == pytest.approx([2, 10.0, 18.0, 20.0, 0.0, 20][i])
             for i in range(6)
         ]
     )
@@ -646,7 +632,7 @@ def test_get_efficiency_metrics(get_efficiency_calculator):
         in [
             "Project ID",
             "Num Wells Score [0-20]",
-            "Avg Dist To Centroid Score [0-30]",
+            "Num Unique Owners Score [0-30]",
             "Age Range Score [0-10]",
             "Depth Range Score [0-20]",
         ]
@@ -655,8 +641,8 @@ def test_get_efficiency_metrics(get_efficiency_calculator):
     assert all(
         [
             list(efficiency_metric_output.iloc[0, :].values)[i]
-            == pytest.approx([2, 10.0, 28.74999, 20][i])
-            for i in range(4)
+            == pytest.approx([2, 10.0, 20.0, 0.0, 20][i])
+            for i in range(5)
         ]
     )
 

@@ -310,12 +310,6 @@ SUPP_EFF_METRICS = {
         required_data="operator_name",
         has_inverse_priority=True,
     ),
-    "avg_dist_to_centroid": _SupportedContent(
-        name="avg_dist_to_centroid",
-        full_name="Average Distance to Centroid [miles]",
-        required_data="dist_centroid",
-        has_inverse_priority=True,
-    ),
     "avg_elevation_delta": _SupportedContent(
         name="avg_elevation_delta",
         full_name="Average Elevation Delta [m]",

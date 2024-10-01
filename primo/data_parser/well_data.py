@@ -47,8 +47,6 @@ class WellData:
         "_col_names",  # Pointer to WellDataColumnNames object
         "_removed_rows",  # dict containing list of rows removed
         "_well_types",  # dict containing well types: oil, gas, shallow, deep, etc.
-        "_impact_metrics",  # ImpactMetrics for the data
-        "_eff_metrics",  # EfficiencyMetrics for the data
     )
 
     # Adds documentation for all the keyword arguments
@@ -74,7 +72,6 @@ class WellData:
             A WellDataColumnNames object containing the names of various columns
         """
         # Import columns whose column names have been provided.
-        LOGGER.info("Reading the well data from the input file.")
         if isinstance(data, pd.DataFrame):
             self.data = data
             # Check if the columns are present in the data
@@ -82,6 +79,7 @@ class WellData:
                 assert col in self.data.columns
 
         elif isinstance(data, str):
+            LOGGER.info("Reading the well data from the input file.")
             extension = pathlib.Path(data).suffix
             if extension in [".xlsx", ".xls"]:
                 self.data = pd.read_excel(
@@ -107,6 +105,7 @@ class WellData:
             # Updating the `index` to keep it consistent with
             # the row numbers in file
             self.data.index += 2
+            LOGGER.info("Finished reading the well data.")
 
         else:
             raise_exception("Unknown variable type for input data", TypeError)
@@ -120,7 +119,6 @@ class WellData:
         # Store number of wells in the input data
         num_wells_input = self.data.shape[0]
 
-        LOGGER.info("Finished reading the well data.")
         if not self.config.preliminary_data_check:
             return
 
@@ -142,6 +140,10 @@ class WellData:
         )
         if num_wells_processed < num_wells_input:
             LOGGER.warning(msg)
+
+        self.set_impact_and_efficiency_metrics(
+            self.config.impact_metrics, self.config.efficiency_metrics
+        )
 
     def __contains__(self, val: str):
         """Checks if a column is available in the well data"""
@@ -884,7 +886,6 @@ class WellData:
             if (
                 metric.name == "fed_dac"
                 or metric.name == "well_count"
-                or metric.name == "avg_dist_to_centroid"
                 or metric.name == "num_wells"
                 or metric.name == "num_unique_owners"
             ):
@@ -947,7 +948,9 @@ class WellData:
         )
 
     def set_impact_and_efficiency_metrics(
-        self, impact_metrics: ImpactMetrics, efficiency_metrics: EfficiencyMetrics
+        self,
+        impact_metrics: ImpactMetrics = None,
+        efficiency_metrics: EfficiencyMetrics = None,
     ):
         """
         Validates and processes data for the impact and efficiency metrics.
@@ -959,12 +962,14 @@ class WellData:
         efficiency_metrics : EfficiencyMetrics
             efficiency metrics object to be used for efficiency score computation
         """
-        self._impact_metrics = impact_metrics
-        self._eff_metrics = efficiency_metrics
-        self._set_metric(impact_metrics)
-        self._set_metric(efficiency_metrics)
+        if impact_metrics is not None:
+            self.config.impact_metrics = impact_metrics
+            self._set_metric(self.config.impact_metrics)
+        if efficiency_metrics is not None:
+            self.config.efficiency_metrics = efficiency_metrics
+            self._set_metric(self.config.efficiency_metrics)
 
-    def compute_priority_scores(self, impact_metrics: ImpactMetrics):
+    def compute_priority_scores(self):
         """
         Computes scores for all metrics/submetrics (supported and custom metrics) and
         the total priority score. This method must be called after processing the
@@ -976,7 +981,7 @@ class WellData:
             Object containing impact metrics and their weights
         """
         # Check the validity of impact metrics before calculating priority score
-        im_mt = impact_metrics
+        im_mt = self.config.impact_metrics
         im_mt.check_validity()
 
         # Check if all the required columns for supported metrics are specified

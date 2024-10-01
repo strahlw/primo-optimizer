@@ -597,6 +597,13 @@ def test_compute_efficiency_scores(get_efficiency_calculator):
         assert project.efficiency_score >= 0
 
 
+def test_compute_efficiency_scores_wrapper(get_efficiency_calculator):
+    campaign = get_efficiency_calculator
+    campaign.compute_efficiency_scores()
+    for _, project in campaign.projects.items():
+        assert project.efficiency_score >= 0
+
+
 # last test for the campaign class
 def test_get_efficiency_metrics(get_efficiency_calculator):
     campaign = get_efficiency_calculator

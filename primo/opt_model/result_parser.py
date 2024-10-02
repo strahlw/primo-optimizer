@@ -733,7 +733,7 @@ class EfficiencyCalculator(object):
             ]
         )
         LOGGER.info(
-            "Computing overall efficiency score for project {project.project_id}"
+            f"Computing overall efficiency score for project {project.project_id}"
         )
         for attr in names_attributes:
             project.update_efficiency_score(getattr(project, attr))

@@ -34,6 +34,8 @@ LOGGER = logging.getLogger(__name__)
 
 CONFIG = data_config()
 
+OWNER_WELL_COLUMN_NAME = "Owner Well-Count"
+
 
 class WellData:
     """
@@ -484,7 +486,10 @@ class WellData:
         self.data.loc[rows, col_name] = 1
 
     def add_new_column_ordered(
-        self, col_name_list: list, values: Union[np.array, pd.DataFrame, list]
+        self,
+        column_var_name: str,
+        column_header_name: str,
+        values: Union[np.array, pd.DataFrame, list],
     ):
         """
         Adds a single column to the WellData and other related data structures
@@ -497,13 +502,8 @@ class WellData:
         values : np.array, pd.DataFrame, list
             The values for the column
         """
-        if len(col_name_list) != 2:
-            raise_exception(
-                "The list must include only the column variable name and the column header label.",
-                AttributeError,
-            )
 
-        self._col_names.register_new_columns({col_name_list[0]: col_name_list[1]})
+        self._col_names.register_new_columns({column_var_name: column_header_name})
 
         if len(values) != len(self.data):
             raise_exception(
@@ -511,7 +511,7 @@ class WellData:
                 AttributeError,
             )
 
-        self.data[col_name_list[1]] = values
+        self.data[column_header_name] = values
 
     def add_new_columns(self):
         """
@@ -931,13 +931,16 @@ class WellData:
         self._append_fed_dac_data()
         return
 
-    def _compute_well_count_score(self, metric: Metric, metrics: ImpactMetrics):
+    def _compute_well_count_score(self):
         """
         process well count data
         """
+        metrics = self.config.impact_metrics
+        metric = [obj for obj in metrics if obj.name == "well_count"][0]
+
         operator_name = self._col_names.operator_name
         weight = metrics.well_count.effective_weight
-        metric.data_col_name = "Owner Well-Count"
+        metric.data_col_name = OWNER_WELL_COLUMN_NAME
         self.data[metric.data_col_name] = self.data.groupby(operator_name)[
             operator_name
         ].transform("size")
@@ -949,8 +952,8 @@ class WellData:
 
     def set_impact_and_efficiency_metrics(
         self,
-        impact_metrics: ImpactMetrics = None,
-        efficiency_metrics: EfficiencyMetrics = None,
+        impact_metrics: Optional[ImpactMetrics] = None,
+        efficiency_metrics: Optional[EfficiencyMetrics] = None,
     ):
         """
         Validates and processes data for the impact and efficiency metrics.
@@ -980,19 +983,14 @@ class WellData:
         impact_metrics : ImpactMetrics
             Object containing impact metrics and their weights
         """
-        # Check the validity of impact metrics before calculating priority score
-        im_mt = self.config.impact_metrics
-        im_mt.check_validity()
-
         # Check if all the required columns for supported metrics are specified
         # If yes, register the name of the column containing the data in the
         # data_col_name attribute
         # TODO: Combine the check_columns_available method with this method.
         # TODO: Check fill data consistency for ann_gas_production and
         # ann_oil_production. See _categorize_gas_oil_wells method for details.
-        self._col_names.check_columns_available(im_mt)
 
-        for metric in im_mt:
+        for metric in self.config.impact_metrics:
             if metric.weight == 0 or hasattr(metric, "submetrics"):
                 # Metric/submetric is not chosen, or
                 # This is a parent metric, so no data assessment is required
@@ -1007,7 +1005,7 @@ class WellData:
                 continue
 
             if metric.name == "well_count":
-                self._compute_well_count_score(metric, im_mt)
+                self._compute_well_count_score()
                 continue
 
             # Step 5: Compute the priority score
@@ -1039,7 +1037,8 @@ class WellData:
 
         LOGGER.info("Computing the total priority score.")
         self.add_new_column_ordered(
-            ["priority_score", "Priority Score [0-100]"],
+            "priority_score",
+            "Priority Score [0-100]",
             self.data[self.get_priority_score_columns].sum(axis=1),
         )
 

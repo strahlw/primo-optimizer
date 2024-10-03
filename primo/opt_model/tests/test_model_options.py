@@ -28,7 +28,7 @@ from primo.opt_model.model_with_clustering import (  # pylint: disable=no-name-i
     IndexedClusterBlock,
     PluggingCampaignModel,
 )
-from primo.opt_model.result_parser import OptimalCampaign, OptimalProject
+from primo.opt_model.result_parser import Campaign, Project
 
 LOGGER = logging.getLogger(__name__)
 
@@ -178,8 +178,8 @@ def test_opt_model_inputs(get_column_names):
 
     assert isinstance(opt_mdl, PluggingCampaignModel)
     assert isinstance(solver, SCIPAMPL)
-    assert isinstance(opt_campaign, OptimalCampaign)
-    assert isinstance(opt_campaign.projects[1], OptimalProject)
+    assert isinstance(opt_campaign, Campaign)
+    assert isinstance(opt_campaign.projects[1], Project)
     # assert isinstance(opt_campaign[1], dict)
 
     # Four projects are chosen in the optimal campaign
@@ -308,8 +308,8 @@ def test_incremental_formulation(get_column_names):
     opt_campaign = opt_mdl_inputs.solve_model(solver="scip")
 
     assert isinstance(opt_mdl, PluggingCampaignModel)
-    assert isinstance(opt_campaign, OptimalCampaign)
-    assert isinstance(opt_campaign.projects[1], OptimalProject)
+    assert isinstance(opt_campaign, Campaign)
+    assert isinstance(opt_campaign.projects[1], Project)
     # assert isinstance(opt_campaign[1], dict)
 
     # Four projects are chosen in the optimal campaign

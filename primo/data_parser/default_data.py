@@ -315,6 +315,7 @@ SUPP_EFF_METRICS = {
         full_name="Average Elevation Delta [m]",
         required_data="elevation_delta",
         has_inverse_priority=True,
+        fill_missing_value={"domain": NonNegativeFloat, "default": 0},
     ),
     "age_range": _SupportedContent(
         name="age_range",
@@ -337,5 +338,6 @@ SUPP_EFF_METRICS = {
         full_name="Distance to Road [miles]",
         required_data="dist_to_road",
         has_inverse_priority=True,
+        fill_missing_value={"domain": NonNegativeFloat, "default": 0},
     ),
 }

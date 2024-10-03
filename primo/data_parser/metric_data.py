@@ -315,7 +315,6 @@ class SetOfMetrics:
                 metric._required_data = val.required_data
                 metric.has_inverse_priority = val.has_inverse_priority
                 if val.fill_missing_value is not None:
-                    metric = getattr(self, val.name)
                     metric._configure_fill_missing_value(**val.fill_missing_value)
 
         return
@@ -693,12 +692,9 @@ class ImpactMetrics(SetOfMetrics):
     """Set of supported impact metrics"""
 
     def __init__(
-        self, impact_metrics: Optional[Dict[str, _SupportedContent]] = None
+        self,
+        impact_metrics: Optional[Dict[str, _SupportedContent]] = SUPP_IMPACT_METRICS,
     ) -> None:
-
-        if impact_metrics is None:
-            impact_metrics = SUPP_IMPACT_METRICS
-
         super().__init__(impact_metrics)
 
 
@@ -706,10 +702,7 @@ class EfficiencyMetrics(SetOfMetrics):
     """Set of supported efficiency metrics"""
 
     def __init__(
-        self, efficiency_metrics: Optional[Dict[str, _SupportedContent]] = None
+        self,
+        efficiency_metrics: Optional[Dict[str, _SupportedContent]] = SUPP_EFF_METRICS,
     ) -> None:
-
-        if efficiency_metrics is None:
-            efficiency_metrics = SUPP_EFF_METRICS
-
         super().__init__(efficiency_metrics)

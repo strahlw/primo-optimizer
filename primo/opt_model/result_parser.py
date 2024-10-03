@@ -29,7 +29,7 @@ from primo.utils.kpi_utils import calculate_average, calculate_range
 LOGGER = logging.getLogger(__name__)
 
 
-class OptimalProject:
+class Project:
     """
     Class for storing optimal projects
     """
@@ -77,7 +77,6 @@ class OptimalProject:
         self.num_wells = len(index)
         # Optimization problem uses million USD. Convert it to USD
         self.plugging_cost = plugging_cost * 1e6
-        self._add_distance_to_centroid_col()
         self.efficiency_score = 0
         accessibility_column_attr = ["elevation_delta", "dist_to_road"]
         self.accessibility_attr = [
@@ -103,7 +102,7 @@ class OptimalProject:
         Checks if a column exists
         """
         if col_name is None:
-            raise ValueError(f"Information for column {col_name} is not available.")
+            raise ValueError(f"The column is not in the welldatacolumns class")
 
     @property
     def num_wells_near_hospitals(self):
@@ -217,11 +216,20 @@ class OptimalProject:
         """
         Returns the accessibility score and the total weight of the accessibility score for a project
         """
-        names_attributes = [i for i in dir(self) if "eff_score" in i]
+        names_attributes = [
+            attribute_name
+            for attribute_name in dir(self)
+            if "eff_score" in attribute_name
+        ]
         names_attributes_accessibility = [
-            name
-            for name in names_attributes
-            if any([name2 in name for name2 in self.accessibility_attr])
+            efficiency_score_name
+            for efficiency_score_name in names_attributes
+            if any(
+                [
+                    accessibility_score_name in efficiency_score_name
+                    for accessibility_score_name in self.accessibility_attr
+                ]
+            )
         ]
         if len(names_attributes_accessibility) == 0:
             return None
@@ -230,22 +238,6 @@ class OptimalProject:
         )
         return total_weight, sum(
             getattr(self, attribute) for attribute in names_attributes_accessibility
-        )
-
-    def _add_distance_to_centroid_col(self):
-        """
-        Adds the distance to centroid column to the well data
-        """
-        # I am assuming here that apply returns the data in the corresponding order
-        self.well_data.add_new_column_ordered(
-            ["dist_centroid", "Distance to Centroid [miles]"],
-            self.well_data.data.apply(
-                lambda row: get_distance(
-                    (row[self._col_names.latitude], row[self._col_names.longitude]),
-                    self.centroid,
-                ),
-                axis=1,
-            ).values,
         )
 
     def get_max_val_col(self, col_name) -> float:
@@ -285,7 +277,7 @@ class OptimalProject:
         return self.well_data[self._essential_cols]
 
 
-class OptimalCampaign:
+class Campaign:
     """
     Represents an optimal campaign that consists of multiple projects.
     """
@@ -313,16 +305,13 @@ class OptimalCampaign:
 
         index = 1
         for cluster, wells in clusters_dict.items():
-            self.projects[index] = OptimalProject(
+            self.projects[index] = Project(
                 wd=wd,
                 index=wells,
                 plugging_cost=plugging_cost[cluster],
-                project_id=cluster,
+                project_id=index,
             )
             index += 1
-        self.project_id_map = {
-            project.project_id: index for index, project in self.projects.items()
-        }
 
         self.num_projects = len(self.projects)
         self.efficiency_calculator = EfficiencyCalculator(self)
@@ -461,7 +450,7 @@ class OptimalCampaign:
         float
             The efficiency score of the project
         """
-        return self.projects[self.project_id_map[project_id]].efficiency_score
+        return self.projects[project_id].efficiency_score
 
     def _extract_column_header_for_efficiency_metrics(self, attribute_name: str):
         """
@@ -482,7 +471,11 @@ class OptimalCampaign:
 
         project_column = [project.project_id for _, project in self.projects.items()]
 
-        names_attributes = [i for i in dir(self.projects[1]) if "eff_score" in i]
+        names_attributes = [
+            attribute_name
+            for attribute_name in dir(self.projects[1])
+            if "eff_score" in attribute_name
+        ]
 
         attribute_data = [
             [getattr(project, attribute) for _, project in self.projects.items()]
@@ -614,14 +607,14 @@ class EfficiencyCalculator(object):
     A class to compute efficiency scores for projects.
     """
 
-    def __init__(self, campaign: OptimalCampaign):
+    def __init__(self, campaign: Campaign):
         """
         Constructs the object for all of the efficiency computations for a campaign
 
         Parameters
         ----------
 
-        campaign : OptimalCampaign
+        campaign : Campaign
             The final campaign for efficiencies to be computed
 
         """
@@ -642,14 +635,14 @@ class EfficiencyCalculator(object):
             LOGGER.info(f"Computing efficiency scores for project {project.project_id}")
             self.compute_efficiency_attributes_for_project(project)
 
-    def compute_efficiency_attributes_for_project(self, project: OptimalProject):
+    def compute_efficiency_attributes_for_project(self, project: Project):
         """
         Adds attributes to each project object with the metric efficiency score
 
         Parameters
         ----------
-        project : OptimalProject
-            project in an OptimalCampaign
+        project : Project
+            project in an Campaign
 
         """
         assert self.efficiency_weights is not None
@@ -715,16 +708,20 @@ class EfficiencyCalculator(object):
                     * metric.effective_weight,
                 )
 
-    def compute_overall_efficiency_scores_project(self, project: OptimalProject):
+    def compute_overall_efficiency_scores_project(self, project: Project):
         """
         Computes the overall efficiency score for a project
 
         Parameters
         ----------
-        project : OptimalProject
-            project in an OptimalCampaign
+        project : Project
+            project in an Campaign
         """
-        names_attributes = [i for i in dir(project) if "eff_score" in i]
+        names_attributes = [
+            attribute_name
+            for attribute_name in dir(project)
+            if "eff_score" in attribute_name
+        ]
         assert len(names_attributes) == len(
             [
                 metric.name
@@ -755,7 +752,7 @@ class EfficiencyCalculator(object):
 
 def export_data_to_excel(
     output_file_path: str,
-    campaigns: List[OptimalCampaign],
+    campaigns: List[Campaign],
     campaign_categories: List[str],
 ):
     """
@@ -765,7 +762,7 @@ def export_data_to_excel(
     ----------
     output_file_path : str
         The path to the output file
-    campaigns : List[OptimalCampaign]
+    campaigns : List[Campaign]
         A list of campaigns to output data for
     campaign_categories : List[str]
         A list of labels corresponding to the campaigns in the campaigns argument

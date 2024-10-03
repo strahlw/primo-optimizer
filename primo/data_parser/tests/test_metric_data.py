@@ -61,6 +61,7 @@ def test_metric_class(caplog):
 
     z.data_col_name = "Metric One"
     assert z.score_col_name == "Metric One Score [0-50]"
+    assert z.score_attribute == "met_1_eff_score_0_50"
 
     # Add test to capture the name modification error
     with pytest.raises(

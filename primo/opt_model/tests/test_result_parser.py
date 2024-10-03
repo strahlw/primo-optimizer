@@ -23,9 +23,9 @@ import pytest
 from primo.data_parser import WellData, WellDataColumnNames
 from primo.data_parser.metric_data import EfficiencyMetrics, ImpactMetrics
 from primo.opt_model.result_parser import (
+    Campaign,
     EfficiencyCalculator,
-    OptimalCampaign,
-    OptimalProject,
+    Project,
     export_data_to_excel,
 )
 from primo.utils.geo_utils import get_distance
@@ -126,9 +126,7 @@ def get_campaign():
 
     well_data.compute_priority_scores()
 
-    return OptimalCampaign(
-        well_data, {2: [0, 1], 3: [2, 3], 4: [4, 5]}, {2: 10, 3: 15, 4: 20}
-    )
+    return Campaign(well_data, {2: [0, 1], 3: [2, 3], 4: [4, 5]}, {2: 10, 3: 15, 4: 20})
 
 
 @pytest.fixture
@@ -222,9 +220,7 @@ def get_minimal_campaign():
 
     well_data.compute_priority_scores()
 
-    return OptimalCampaign(
-        well_data, {2: [0, 1], 3: [2, 3], 4: [4]}, {2: 10, 3: 15, 4: 20}
-    )
+    return Campaign(well_data, {1: [0, 1], 2: [2, 3], 3: [4]}, {1: 10, 2: 15, 3: 20})
 
 
 @pytest.fixture
@@ -275,13 +271,13 @@ def test_check_column_exists(get_project):
         print(get_project.num_wells_near_hospitals)
 
 
-# test OptimalProject Class
+# test Project Class
 def test_project_attributes(get_project):
     project = get_project
     for index in project:
         assert index in project.well_data.data.index
     assert len(project.well_data.data) == 2
-    assert project.project_id == 2
+    assert project.project_id == 1
     assert project.num_wells == 2
     assert project.plugging_cost == 10e6
     assert project.efficiency_score == 0
@@ -371,19 +367,18 @@ def test_project_str(get_project):
     project = get_project
     assert (
         str(project)
-        == "Number of wells in project 2\t\t: 2\n"
+        == "Number of wells in project 1\t\t: 2\n"
         + "Estimated Project Cost\t\t\t: $10000000\n"
         + "Impact Score [0-100]\t\t\t: 38.25\n"
         + "Efficiency Score [0-100]\t\t: 0.00\n"
     )
 
 
-# test OptimalCampaign Class
+# test Campaign Class
 def test_campaign_attributes(get_campaign):
     campaign = get_campaign
     assert len(campaign.projects) == 3
     assert campaign.num_projects == 3
-    assert campaign.project_id_map == {2: 1, 3: 2, 4: 3}
     assert campaign.total_plugging_cost == 45e6
     assert len(campaign.wd) == 6
     # already tested the project string function
@@ -426,15 +421,15 @@ def test_get_min_value_across_all_wells(get_campaign):
 # for now leaving the plotting out of the tests
 def test_get_project_well_information(get_campaign):
     info = get_campaign.get_project_well_information()
-    assert all([i in [2, 3, 4] for i in info.keys()])
+    assert all([i in [1, 2, 3] for i in info.keys()])
     # already tested well_info_dataframe
 
 
 def test_get_efficiency_score_project(get_campaign):
     project = get_campaign.projects[1]
-    assert get_campaign.get_efficiency_score_project(2) == 0
+    assert get_campaign.get_efficiency_score_project(1) == 0
     project.update_efficiency_score(5)
-    assert get_campaign.get_efficiency_score_project(2) == 5
+    assert get_campaign.get_efficiency_score_project(1) == 5
 
 
 def test_extract_column_header_for_efficiency_metrics(get_campaign):
@@ -464,7 +459,7 @@ def test_campaign_summary(get_campaign):
         ]
         for i in summary.columns
     )
-    assert list(summary["Project ID"].values) == [2, 3, 4]
+    assert list(summary["Project ID"].values) == [1, 2, 3]
     assert summary["Impact Score [0-100]"].values[0] == 38.25
     assert len(summary) == 3
 
@@ -627,7 +622,7 @@ def test_get_efficiency_metrics(get_efficiency_calculator):
     assert all(
         [
             list(efficiency_metric_output.iloc[0, :].values)[i]
-            == pytest.approx([2, 10.0, 18.0, 20.0, 0.0, 20][i])
+            == pytest.approx([1, 10.0, 18.0, 20.0, 0.0, 20][i])
             for i in range(6)
         ]
     )
@@ -648,7 +643,7 @@ def test_get_efficiency_metrics(get_efficiency_calculator):
     assert all(
         [
             list(efficiency_metric_output.iloc[0, :].values)[i]
-            == pytest.approx([2, 10.0, 20.0, 0.0, 20][i])
+            == pytest.approx([1, 10.0, 20.0, 0.0, 20][i])
             for i in range(5)
         ]
     )

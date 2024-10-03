@@ -198,26 +198,9 @@ def test_well_data(caplog, get_column_names):
     ) in caplog.text
 
     new_column = np.ones(len(wd.data))
-    with pytest.raises(AttributeError):
-        wd.add_new_column_ordered(["One entry"], new_column)
     badly_sized_column = np.ones(len(wd.data) - 1)
     with pytest.raises(AttributeError):
-        wd.add_new_column_ordered(["ones", "col_of_ones"], badly_sized_column)
-
-
-def test_get_well_column_names(get_column_names):
-    filename, col_names = get_column_names
-    wd = WellData(
-        data=filename,
-        column_names=col_names,
-        fill_age=99,
-        fill_depth=999,
-        fill_life_gas_production=1.5,
-        fill_life_oil_production=1.5,
-        threshold_gas_production=2,
-        threshold_oil_production=2,
-        threshold_depth=2000,
-    )
+        wd.add_new_column_ordered("ones", "col_of_ones", badly_sized_column)
 
 
 def test_no_warnings(caplog, get_column_names):

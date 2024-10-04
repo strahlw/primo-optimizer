@@ -148,6 +148,7 @@ def test_opt_model_inputs(get_column_names):
         mobilization_cost=mobilization_cost,
         threshold_distance=10,
         max_wells_per_owner=1,
+        min_budget_usage=50,
     )
 
     # Ensure that clustering is performed internally
@@ -183,8 +184,8 @@ def test_opt_model_inputs(get_column_names):
     assert isinstance(opt_campaign[0], dict)
     assert isinstance(opt_campaign[1], dict)
 
-    # Four projects are chosen in the optimal campaign
-    assert len(opt_campaign[0]) == 4
+    # Five projects are chosen in the optimal campaign
+    assert len(opt_campaign[0]) == 5
 
     # Test the structure of the optimization model
     num_clusters = len(set(wd_gas["Clusters"]))
@@ -192,8 +193,15 @@ def test_opt_model_inputs(get_column_names):
     assert len(opt_mdl.cluster) == num_clusters
     assert isinstance(opt_mdl.cluster, IndexedClusterBlock)
     assert not hasattr(opt_mdl, "min_wells_in_dac_constraint")
+    assert hasattr(opt_mdl, "min_budget_usage_con")
     assert hasattr(opt_mdl, "max_well_owner_constraint")
+    assert hasattr(opt_mdl, "budget_constraint_slack")
     assert hasattr(opt_mdl, "total_priority_score")
+
+    # Check if the scaling factor for budget slack variable is correctly built
+    scaling_factor, budget_sufficient = opt_mdl.budget_slack_variable_scaling()
+    assert np.isclose(scaling_factor, 955.6699386511185)
+    assert not budget_sufficient
 
     # Check if all the cluster sets are defined
     assert hasattr(opt_mdl.cluster[1], "set_wells")
@@ -214,6 +222,7 @@ def test_opt_model_inputs(get_column_names):
     assert opt_mdl.cluster[1].plugging_cost.domain == pe.NonNegativeReals
     assert opt_mdl.cluster[1].num_wells_chosen.domain == pe.NonNegativeReals
     assert opt_mdl.cluster[1].num_wells_dac.domain == pe.NonNegativeReals
+    assert opt_mdl.budget_slack_var.domain == pe.NonNegativeReals
 
     # Check if the required expressions are defined
     assert hasattr(opt_mdl.cluster[1], "cluster_priority_score")
@@ -313,8 +322,16 @@ def test_incremental_formulation(get_column_names):
     assert isinstance(opt_campaign[0], dict)
     assert isinstance(opt_campaign[1], dict)
 
+    # Test the structure of the optimization model
+    assert not hasattr(opt_mdl, "min_budget_usage_con")
+
+    # Check if the scaling factor for budget slack variable is correctly built
+    _, budget_sufficient = opt_mdl.budget_slack_variable_scaling()
+    assert np.isclose(opt_mdl.slack_var_scaling.value, 0)
+    assert not budget_sufficient
+
     # Four projects are chosen in the optimal campaign
-    assert len(opt_campaign[0]) == 4
+    assert len(opt_campaign[0]) == 5
 
     # Check if the required constraints are defined
     assert hasattr(opt_mdl.cluster[1], "calculate_num_wells_chosen")
@@ -323,3 +340,38 @@ def test_incremental_formulation(get_column_names):
     assert hasattr(opt_mdl.cluster[1], "campaign_length")
     assert not hasattr(opt_mdl.cluster[1], "num_well_uniqueness")
     assert hasattr(opt_mdl.cluster[1], "ordering_num_wells_vars")
+
+
+def test_budget_slack_variable_scaling(get_column_names):
+    im_metrics, col_names, filename = get_column_names
+
+    # Create the well data object
+    wd = WellData(data=filename, column_names=col_names)
+
+    # Partition the wells as gas/oil
+    gas_oil_wells = wd.get_gas_oil_wells
+    wd_gas = gas_oil_wells["gas"]
+
+    # Mobilization cost
+    mobilization_cost = {1: 120000, 2: 210000, 3: 280000, 4: 350000}
+    for n_wells in range(5, len(wd_gas.data) + 1):
+        mobilization_cost[n_wells] = n_wells * 84000
+
+    # Test the model and options
+    wd_gas.compute_priority_scores(impact_metrics=im_metrics)
+
+    opt_mdl_inputs = OptModelInputs(
+        well_data=wd_gas,
+        total_budget=325000000,  # 325 million USD
+        mobilization_cost=mobilization_cost,
+        threshold_distance=10,
+        max_wells_per_owner=1,
+        min_budget_usage=50,
+    )
+
+    opt_mdl = opt_mdl_inputs.build_optimization_model()
+
+    # Check if the scaling factor for budget slack variable is correctly built
+    scaling_factor, budget_sufficient = opt_mdl.budget_slack_variable_scaling()
+    assert np.isclose(scaling_factor, 105.71767887503083)
+    assert budget_sufficient

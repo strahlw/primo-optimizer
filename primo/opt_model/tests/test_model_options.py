@@ -184,7 +184,7 @@ def test_opt_model_inputs(get_column_names):
     # assert isinstance(opt_campaign[1], dict)
 
     # Four projects are chosen in the optimal campaign
-    assert len(opt_campaign.projects) == 4
+    assert len(opt_campaign.projects) == 5
 
     # Test the structure of the optimization model
     num_clusters = len(set(wd_gas["Clusters"]))
@@ -330,7 +330,7 @@ def test_incremental_formulation(get_column_names):
     assert not budget_sufficient
 
     # Four projects are chosen in the optimal campaign
-    assert len(opt_campaign.projects) == 4
+    assert len(opt_campaign.projects) == 5
 
     # Check if the required constraints are defined
     assert hasattr(opt_mdl.cluster[1], "calculate_num_wells_chosen")
@@ -345,7 +345,7 @@ def test_budget_slack_variable_scaling(get_column_names):
     im_metrics, col_names, filename = get_column_names
 
     # Create the well data object
-    wd = WellData(data=filename, column_names=col_names)
+    wd = WellData(data=filename, column_names=col_names, impact_metrics=im_metrics)
 
     # Partition the wells as gas/oil
     gas_oil_wells = wd.get_gas_oil_wells
@@ -357,7 +357,7 @@ def test_budget_slack_variable_scaling(get_column_names):
         mobilization_cost[n_wells] = n_wells * 84000
 
     # Test the model and options
-    wd_gas.compute_priority_scores(impact_metrics=im_metrics)
+    wd_gas.compute_priority_scores()
 
     opt_mdl_inputs = OptModelInputs(
         well_data=wd_gas,

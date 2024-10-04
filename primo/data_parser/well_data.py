@@ -978,10 +978,6 @@ class WellData:
         the total priority score. This method must be called after processing the
         data for custom metrics (if any).
 
-        Parameters
-        ----------
-        impact_metrics : ImpactMetrics
-            Object containing impact metrics and their weights
         """
         # Check if all the required columns for supported metrics are specified
         # If yes, register the name of the column containing the data in the

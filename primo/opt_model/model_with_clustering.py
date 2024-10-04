@@ -30,6 +30,9 @@ from pyomo.environ import (
     maximize,
 )
 
+# User-defined libs
+from primo.opt_model.result_parser import Campaign
+
 LOGGER = logging.getLogger(__name__)
 
 
@@ -498,11 +501,8 @@ class PluggingCampaignModel(ConcreteModel):
                     # Well w is chosen, so store it in the dict
                     optimal_campaign[c].append(w)
 
-        # Well data
-        # TODO: Uncomment when result_parser.py is completed
-        # wd = self.model_inputs.config.well_data
-        # return OptimalCampaign(wd, optimal_campaign, plugging_cost)
-        return (optimal_campaign, plugging_cost)
+        wd = self.model_inputs.config.well_data
+        return Campaign(wd, optimal_campaign, plugging_cost)
 
     def get_solution_pool(self, solver):
         """
@@ -545,10 +545,10 @@ class PluggingCampaignModel(ConcreteModel):
                         # Well w is chosen, so store it in the dict
                         optimal_campaign[c].append(w)
 
-            # TODO: Uncomment the following lines after result_parser is merged
-            # solution_pool[i + 1] = OptimalCampaign(
-            #     wd=wd, clusters_dict=optimal_campaign, plugging_cost=plugging_cost
-            # )
-            solution_pool[i + 1] = (optimal_campaign, plugging_cost)
+            solution_pool[i + 1] = Campaign(
+                wd=self.model_inputs.config.well_data,
+                clusters_dict=optimal_campaign,
+                plugging_cost=plugging_cost,
+            )
 
         return solution_pool

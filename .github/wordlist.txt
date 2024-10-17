@@ -54,8 +54,6 @@ geopoint
 geospatial
 glpk
 gpd
-gurobi
-hardcoded
 inplace
 ipynb
 ipywidgets
@@ -72,13 +70,11 @@ param
 pathlib
 pre
 pyo
-pyomo
 quickstart
 scikit
 shapefile
 shapefiles
 stacktrace
-stagedfright
 sublicense
 submetric
 submetrics

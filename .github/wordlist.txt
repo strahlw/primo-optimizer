@@ -48,6 +48,7 @@ datasets
 devnull
 dicts
 df
+docstring
 dtype
 dunder
 env

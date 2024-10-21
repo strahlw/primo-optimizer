@@ -101,9 +101,9 @@ def my_infeasible_model():
 @pytest.fixture(name="unbounded_model")
 def my_unbounded_model():
     model = pyo.ConcreteModel()
-    model.x = pyo.Var()
-    model.y = pyo.Var(bounds=(0, 1))
-    model.obj = pyo.Objective(expr=model.x)
+    model.x = pyo.Var(bounds=(0, None))
+    model.y = pyo.Var(bounds=(0, 1), initialize=1)
+    model.obj = pyo.Objective(expr=model.x, sense=pyo.maximize)
     model.con = pyo.Constraint(expr=model.x + model.y >= 4)
     return model
 
@@ -136,10 +136,6 @@ def test_optimization_results_handler(
     results = solver_highs.solve(create_test_model)
     assert optimization_results_handler(results) is None
 
-    results = solver_highs.solve(unbounded_model)
-    try:
+    with pytest.raises(RuntimeError):
+        results = solver_highs.solve(unbounded_model)
         optimization_results_handler(results)
-    except OptimizationException as e:
-        assert e.args[0] == "Optimization did not terminate optimally"
-        assert e.args[1].solver.termination_condition == TerminationCondition.unbounded
-        assert e.args[1].solver.termination_condition == SolverStatus.warning

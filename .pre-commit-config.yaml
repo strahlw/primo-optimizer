@@ -21,9 +21,6 @@ repos:
   - repo: local
     hooks:
       - id: pylint
-        args: 
-          - --limit=9
-          - --rcfile=./.pylintrc
         name: pylint
         entry: pylint
         language: system

@@ -20,6 +20,7 @@ LLC
 Mcf
 MIP
 Namespace
+NaN
 Pyomo
 Pytest
 Quickstart
@@ -70,6 +71,7 @@ json
 libs
 msg
 multicommodity
+nanmean
 ndarray
 np
 num

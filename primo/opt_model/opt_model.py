@@ -33,6 +33,7 @@ from primo.utils.raise_exception import raise_exception
 
 LOGGER = logging.getLogger(__name__)
 
+
 # pylint: disable=super-init-not-called
 class OptModel(BaseModel):
     """

@@ -26,6 +26,7 @@ from primo.utils.opt_utils import (
     is_pyomo_model_feasible,
     optimization_results_handler,
 )
+from primo.utils.solvers import get_solver
 
 
 @pytest.mark.parametrize(
@@ -112,30 +113,31 @@ def my_unbounded_model():
 def test_optimization_results_handler(
     infeasible_model, create_test_model, unbounded_model
 ):
-    solver = pyo.SolverFactory("gurobi")
+    solver = get_solver("gurobi")
     results = solver.solve(infeasible_model)
     try:
-        optimization_results_handler(results)
+        opt_flag = optimization_results_handler(results, infeasible_model)
+        assert opt_flag == 1
     except OptimizationException as e:
-        assert e.args[0] == "Optimization did not terminate optimally"
+        assert e.args[0] == "Optimization did not terminate feasibly or optimally"
         assert e.args[1].solver.termination_condition == TerminationCondition.infeasible
         assert e.args[1].solver.status == SolverStatus.warning
 
     # check the successful branch
     results = solver.solve(create_test_model)
-    assert optimization_results_handler(results) is None
+    assert optimization_results_handler(results, create_test_model) == 1
 
     # test out highs...
-    solver_highs = pyo.SolverFactory("appsi_highs")
+    solver_highs = get_solver("highs")
     with pytest.raises(RuntimeError):
         # highs will throw an error when trying to load a solution if the model is infeasible
         # we'll just catch the error at the web API level and deal with it
         results = solver_highs.solve(infeasible_model)
-        optimization_results_handler(results)
+        optimization_results_handler(results, infeasible_model)
 
     results = solver_highs.solve(create_test_model)
-    assert optimization_results_handler(results) is None
+    assert optimization_results_handler(results, create_test_model) == 1
 
     with pytest.raises(RuntimeError):
         results = solver_highs.solve(unbounded_model)
-        optimization_results_handler(results)
+        optimization_results_handler(results, unbounded_model)

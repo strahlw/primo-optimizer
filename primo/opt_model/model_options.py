@@ -315,7 +315,7 @@ class OptModelInputs:  # pylint: disable=too-many-instance-attributes
         # Solve the optimization problem
         results = solver.solve(self._opt_model)
 
-        optimization_results_handler(results)
+        optimality_flag = optimization_results_handler(results, self._opt_model)
 
         # Return the solution pool, if it is requested
         if solver_name == "gurobi_persistent" and pool_search_mode == 2:
@@ -323,4 +323,4 @@ class OptModelInputs:  # pylint: disable=too-many-instance-attributes
             return self._opt_model.get_solution_pool(self._solver)
 
         # In all other cases, return the optimal campaign
-        return self._opt_model.get_optimal_campaign()
+        return self._opt_model.get_optimal_campaign(), optimality_flag

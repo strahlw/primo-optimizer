@@ -18,11 +18,13 @@ Iterable
 Jupyter
 LLC
 Mcf
+MIP
 Namespace
 Pyomo
 Pytest
 Quickstart
 Redistributions
+RHS
 Sandia
 SubCheckBoxWidget
 Submetric
@@ -66,7 +68,6 @@ ipywidgets
 iterable
 json
 libs
-MIP
 msg
 multicommodity
 ndarray
@@ -76,6 +77,7 @@ numpy
 param
 pathlib
 pre
+primo
 pyo
 pyomo
 quickstart
@@ -85,6 +87,7 @@ shapefile
 shapefiles
 stacktrace
 stagedfright
+stdout
 str
 sublicense
 submetric
@@ -92,6 +95,7 @@ submetrics
 tol
 txt
 ub
+un
 uncheck
 unchecking
 url

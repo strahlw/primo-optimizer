@@ -18,8 +18,9 @@ from typing import Dict, Tuple, Union
 # Installed libs
 import numpy as np
 import pyomo.environ as pyo
+from pyomo.environ import check_optimal_termination
 from pyomo.opt import SolverResults
-from pyomo.opt.results.solver import check_optimal_termination
+from pyomo.opt.results.solver import SolverStatus, TerminationCondition
 
 LOGGER = logging.getLogger(__name__)
 
@@ -222,7 +223,7 @@ class OptimizationException(Exception):
     """Exception for the optimization"""
 
 
-def optimization_results_handler(results: SolverResults):
+def optimization_results_handler(results: SolverResults, model: pyo.ConcreteModel):
     """
     A function to handle the various results returned by an optimization solve
 
@@ -231,9 +232,13 @@ def optimization_results_handler(results: SolverResults):
     results : SolverResults
         Result of an optimization solve
 
+    model : pyo.ConcreteModel
+        Pyomo model being solved
+
     Returns
     -------
-    None
+        1 : Optimal termination
+        2 : Feasible sub-optimal termination
 
     Raises
     ------
@@ -241,6 +246,19 @@ def optimization_results_handler(results: SolverResults):
         if the solver doesn't optimally terminate, raise the error
     """
     if check_optimal_termination(results):
-        return
+        return 1
 
-    raise OptimizationException("Optimization did not terminate optimally", results)
+    # feasible solution
+    if (
+        results.solver.status == SolverStatus.ok
+        and not results.solver.termination_condition == TerminationCondition.other
+    ):
+        LOGGER.warning("Loading a feasible, but suboptimal solution")
+        model.load(results)
+        return 2
+
+    print(results.solver.status)
+    print(results.solver.termination_condition)
+    raise OptimizationException(
+        "Optimization did not terminate feasibly or optimally", results
+    )

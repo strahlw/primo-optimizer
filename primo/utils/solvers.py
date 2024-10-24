@@ -16,7 +16,6 @@ import logging
 
 # Installed libs
 from pyomo.environ import SolverFactory
-from pyomo.environ import check_optimal_termination as pyo_opt_term
 
 LOGGER = logging.getLogger(__name__)
 
@@ -104,32 +103,3 @@ def get_solver(
         return sol_obj
 
     raise ValueError(f"Solver {solver} is not recognized!")
-
-
-def check_optimal_termination(results, solver):
-    """
-    Checks if the solver found the optimal solution or not.
-
-    Parameters
-    ----------
-    results : Pyomo results object
-
-    solver : str
-        Solver used to solve the MIP
-
-    Returns
-    -------
-    bool :
-        True, if optimal solution is found; False, otherwise.
-
-    Raises
-    ------
-    ValueError
-        If an unrecognized solver is provided as an input.
-        Supported solvers include highs, gurobi, scip, and glpk
-    """
-
-    if solver in ["glpk", "gurobi", "gurobi_persistent", "scip", "highs"]:
-        return pyo_opt_term(results)
-
-    raise ValueError(f"Solver {solver} is not recognized")

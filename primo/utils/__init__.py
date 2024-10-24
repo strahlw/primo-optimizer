@@ -25,7 +25,7 @@ from primo.data_parser.default_data import (
 from primo.data_parser.default_data import START_COORDINATES as Start_coordinates
 from primo.utils.opt_utils import optimization_results_handler
 from primo.utils.setup_logger import setup_logger
-from primo.utils.solvers import check_optimal_termination, get_solver
+from primo.utils.solvers import get_solver
 
 LOGGER = logging.getLogger(__name__)
 

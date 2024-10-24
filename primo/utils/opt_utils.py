@@ -19,7 +19,7 @@ from typing import Dict, Tuple, Union
 import numpy as np
 import pyomo.environ as pyo
 from pyomo.environ import check_optimal_termination
-from pyomo.opt import SolutionStatus, SolverResults
+from pyomo.opt import SolverResults, SolverStatus, TerminationCondition
 
 LOGGER = logging.getLogger(__name__)
 
@@ -248,9 +248,12 @@ def optimization_results_handler(results: SolverResults, model: pyo.ConcreteMode
         return 1
 
     # feasible solution - couldn't find a suitable test
-    if results.solution_status == SolutionStatus.feasible:
+    if (
+        results.solver.status == SolverStatus.ok
+        and not results.solver.termination_condition == TerminationCondition.other
+    ):
         LOGGER.warning("Loading a feasible, but sub-optimal solution")
-        model.load(results)
+        model.solutions.load_from(results)
         return 2
 
     raise OptimizationException(

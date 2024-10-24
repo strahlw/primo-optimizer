@@ -15,7 +15,7 @@
 # Installed libs
 import pyomo.environ as pyo
 import pytest
-from pyomo.opt import SolutionStatus, SolverStatus, TerminationCondition
+from pyomo.opt import SolverStatus, TerminationCondition
 
 # User-defined libs
 from primo.utils.opt_utils import (
@@ -138,7 +138,7 @@ def test_optimization_results_handler(
     assert optimization_results_handler(results, create_test_model) == 1
 
     # couldn't find an example of an actual optimization problem where this happens
-    results.solution_status = SolutionStatus.feasible
+    results.solver.termination_condition = TerminationCondition.maxTimeLimit
     assert optimization_results_handler(results, create_test_model) == 2
 
     with pytest.raises(RuntimeError):

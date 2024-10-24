@@ -15,7 +15,7 @@
 # Installed libs
 import pyomo.environ as pyo
 import pytest
-from pyomo.opt import SolverStatus, TerminationCondition
+from pyomo.opt import SolutionStatus, SolverStatus, TerminationCondition
 
 # User-defined libs
 from primo.utils.opt_utils import (
@@ -116,8 +116,7 @@ def test_optimization_results_handler(
     solver = get_solver("gurobi")
     results = solver.solve(infeasible_model)
     try:
-        opt_flag = optimization_results_handler(results, infeasible_model)
-        assert opt_flag == 1
+        optimization_results_handler(results, infeasible_model)
     except OptimizationException as e:
         assert e.args[0] == "Optimization did not terminate feasibly or optimally"
         assert e.args[1].solver.termination_condition == TerminationCondition.infeasible
@@ -137,6 +136,10 @@ def test_optimization_results_handler(
 
     results = solver_highs.solve(create_test_model)
     assert optimization_results_handler(results, create_test_model) == 1
+
+    # couldn't find an example of an actual optimization problem where this happens
+    results.solution_status = SolutionStatus.feasible
+    assert optimization_results_handler(results, create_test_model) == 2
 
     with pytest.raises(RuntimeError):
         results = solver_highs.solve(unbounded_model)

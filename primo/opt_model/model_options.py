@@ -29,7 +29,7 @@ from pyomo.common.config import (
 from pyomo.environ import SolverFactory
 
 # User-defined libs
-from primo.data_parser import WellData
+from primo.data_parser.well_data import WellData
 from primo.opt_model.model_with_clustering import PluggingCampaignModel
 from primo.utils import get_solver
 from primo.utils.clustering_utils import distance_matrix, perform_clustering

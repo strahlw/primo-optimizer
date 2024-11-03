@@ -20,7 +20,8 @@ import playwright
 import pytest
 
 # User-defined libs
-from primo.data_parser import EfficiencyMetrics, WellData
+from primo.data_parser import EfficiencyMetrics
+from primo.data_parser.well_data import WellData
 from primo.opt_model.model_options import OptModelInputs
 from primo.opt_model.tests.test_model_options import (  # pylint: disable=unused-import
     get_column_names_fixture,
@@ -174,11 +175,10 @@ def test_read_config(monkeypatch, path, expected_result):
     Test the read_config function for reading a config file.
     """
 
-    # pylint: disable=unused-argument
     def mock_exists(p):
         return p == "valid_config.json"
 
-    def mock_open(p, _):
+    def mock_open(_p, _):
         class MockFile:
             """
             A mock implementation of a file object for testing purposes.

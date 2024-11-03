@@ -8,7 +8,7 @@ CRS
 Dataclass
 DataFrame
 DAC
-fixme
+ExcelWriter
 GeoDataFrame
 Geopandas
 Gurobi

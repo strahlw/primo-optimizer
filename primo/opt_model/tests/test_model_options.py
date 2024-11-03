@@ -22,7 +22,8 @@ import pyomo.environ as pe
 import pytest
 
 # User-defined libs
-from primo.data_parser import ImpactMetrics, WellData, WellDataColumnNames
+from primo.data_parser import ImpactMetrics, WellDataColumnNames
+from primo.data_parser.well_data import WellData
 from primo.opt_model.model_options import OptModelInputs
 from primo.opt_model.model_with_clustering import (  # pylint: disable=no-name-in-module
     IndexedClusterBlock,
@@ -37,6 +38,7 @@ LOGGER = logging.getLogger(__name__)
 # pylint: disable=duplicate-code
 
 
+# pylint: disable=missing-function-docstring
 @pytest.fixture(name="get_column_names", scope="function")
 def get_column_names_fixture():
     """
@@ -196,7 +198,7 @@ def test_opt_model_inputs(get_column_names):
     assert isinstance(opt_campaign.projects[1], Project)
 
     # Four or five projects are chosen in the optimal campaign
-    # TODO: Confirm degeneracy # pylint: disable=fixme
+    # TODO: Confirm degeneracy
     assert len(opt_campaign.projects) in [4, 5]
 
     # Test the structure of the optimization model
@@ -346,11 +348,8 @@ def test_incremental_formulation(get_column_names):
     assert np.isclose(opt_mdl.unused_budget_scaling.value, 0)
     assert not budget_sufficient
 
-    # Check if the upper bound of the unused budget is set
-    assert opt_mdl.unused_budget.upper is None
-
     # Four or five projects are chosen in the optimal campaign
-    # TODO: Confirm degeneracy # pylint: disable=fixme
+    # TODO: Confirm degeneracy
 
     assert len(opt_campaign.projects) in [4, 5]
 

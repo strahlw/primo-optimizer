@@ -79,6 +79,7 @@ numpy
 param
 pathlib
 pre
+primo
 pyo
 quickstart
 scikit

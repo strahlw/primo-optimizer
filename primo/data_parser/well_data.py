@@ -682,20 +682,20 @@ class WellData:
                 "ann_oil_production_flag",
             )
 
-            # Uncomment the code to add the column to self.data (Not recommended)
-            # # Convert oil production from bbl/Year to Mcf/Year using the conversion factor
-            # self.data["Oil [Mcf/Year]"] = (
-            #     self.data[wcn.ann_oil_production] * CONVERSION_FACTOR
-            # )
-            # wcn.well_type = "Well Type"
-            # self.data[wcn.well_type] = self.data.apply(
-            #     lambda row: (
-            #         "Gas" if row[wcn.ann_gas_production] > row["Oil [Mcf/Year]"] else "Oil"
-            #     ),
-            #     axis=1,
-            # )
-            # # Drop the intermediate 'Oil [Mcf/year]' column
-            # self.data = self.data.drop(columns=["Oil [Mcf/Year]"])
+            #Uncomment the code to add the column to self.data (Not recommended)
+            # Convert oil production from bbl/Year to Mcf/Year using the conversion factor
+            self.data["Oil [Mcf/Year]"] = (
+                self.data[wcn.ann_oil_production] * CONVERSION_FACTOR
+            )
+            wcn.well_type = "Well Type"
+            self.data[wcn.well_type] = self.data.apply(
+                lambda row: (
+                    "Gas" if row[wcn.ann_gas_production] > row["Oil [Mcf/Year]"] else "Oil"
+                ),
+                axis=1,
+            )
+            # Drop the intermediate 'Oil [Mcf/year]' column
+            self.data = self.data.drop(columns=["Oil [Mcf/Year]"])
 
             self._well_types["oil"] = set(
                 self.data[

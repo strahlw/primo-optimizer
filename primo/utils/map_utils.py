@@ -72,7 +72,7 @@ def add_county_names_to_map(
         try:
             county_name = county.NAME  # First case
         except AttributeError:
-            county_name = county.COUNTY_NAM  # Second case
+            county_name = county.COUNTY  # Second case
         # Project county to a flat project before taking centroid
         centroid = [county.geometry.centroid.y, county.geometry.centroid.x]
         folium.map.Marker(

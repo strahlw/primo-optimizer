@@ -278,8 +278,6 @@ class Project:
         value : Union[int, float]
             The value to update the efficiency score with
         """
-        if len(self.well_data) == 1:
-            return
         self.efficiency_score += value
 
     def get_well_info_dataframe(self):
@@ -431,8 +429,8 @@ class Campaign:
         ax = plt.gca()
         for _, project in self.projects.items():
             ax.scatter(
-                project.well_data[project.col_names.latitude],
                 project.well_data[project.col_names.longitude],
+                project.well_data[project.col_names.latitude],
             )
         plt.title(title)
         plt.xlabel("x-coordinate of wells")
@@ -720,9 +718,15 @@ class EfficiencyCalculator:
                 setattr(
                     project,
                     metric.score_attribute,
-                    (
-                        (max_value - getattr(project, metric.name))
-                        / (max_value - min_value)
+                    max(
+                        0,
+                        min(
+                            1,
+                            (
+                                (max_value - getattr(project, metric.name))
+                                / (max_value - min_value)
+                            ),
+                        ),
                     )
                     * metric.effective_weight,
                 )
@@ -731,9 +735,13 @@ class EfficiencyCalculator:
                 setattr(
                     project,
                     metric.score_attribute,
-                    (
-                        (getattr(project, metric.name) - min_value)
-                        / (max_value - min_value)
+                    max(
+                        0,
+                        min(
+                            1,
+                            (getattr(project, metric.name) - min_value)
+                            / (max_value - min_value),
+                        ),
                     )
                     * metric.effective_weight,
                 )

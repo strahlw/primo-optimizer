@@ -11,15 +11,26 @@
 # perform publicly and display publicly, and to permit others to do so.
 #################################################################################
 
-# User-defined libs
-from primo.data_parser.metric_data import EfficiencyMetrics, ImpactMetrics
-from primo.data_parser.well_data import WellData
-from primo.data_parser.well_data_columns import WellDataColumnNames
-from primo.opt_model.model_options import OptModelInputs
-from primo.opt_model.result_parser import EfficiencyCalculator, export_data_to_excel
-from primo.utils import setup_logger
-from primo.utils.config_utils import UserSelection
-from primo.utils.override_utils import OverrideCampaign
+# Standard libs
+import logging
+import os
 
-RELEASE = "0.2.0rc2"
-VERSION = "0.2.0"
+# User-defined libs
+import primo
+from primo.utils.raise_exception import raise_exception
+from primo.utils.setup_logger import setup_logger
+
+setup_logger(log_level=3)
+
+LOGGER = logging.getLogger(__name__)
+
+RELEASE_VERSION = os.environ.get("RELEASE_VERSION")
+if RELEASE_VERSION is None:
+    raise_exception("PRIMO version not found", ValueError)
+
+LOGGER.info(f"GitHub tag indicates RELEASE_VERSION is: {RELEASE_VERSION}")
+LOGGER.info(f"PRIMO source indicates RELEASE_VERSION is: {primo.RELEASE}")
+if RELEASE_VERSION != primo.RELEASE:
+    raise_exception("GitHub tag does not match RELEASE version", ValueError)
+
+LOGGER.info("PRIMO Version matches GitHub Tag!")

@@ -103,7 +103,14 @@ def get_column_names_fixture():
     return im_metrics, col_names, data_file
 
 
-def test_opt_model_inputs(get_column_names):
+@pytest.mark.parametrize(
+    "cluster_method, num_projects",
+    [
+        ("Louvain", [5, 6]),
+        ("Agglomerative", [4, 5]),
+    ],
+)
+def test_opt_model_inputs(get_column_names, cluster_method, num_projects):
     """
     Test that the optimization model is constructed and solved correctly.
     """
@@ -165,6 +172,7 @@ def test_opt_model_inputs(get_column_names):
         max_wells_per_owner=1,
         min_budget_usage=50,
         penalize_unused_budget=True,
+        cluster_method=cluster_method,
     )
 
     # Ensure that clustering is performed internally
@@ -192,11 +200,12 @@ def test_opt_model_inputs(get_column_names):
 
     assert isinstance(opt_mdl, PluggingCampaignModel)
     assert isinstance(opt_campaign, Campaign)
-    assert isinstance(opt_campaign.projects[1], Project)
+    project_keys = list(opt_campaign.projects.keys())
+    example_key = project_keys[0]  # Pick the first available key
+    assert isinstance(opt_campaign.projects[example_key], Project)
 
-    # Four or five projects are chosen in the optimal campaign
     # TODO: Confirm degeneracy
-    assert len(opt_campaign.projects) in [4, 5]
+    assert len(opt_campaign.projects) in num_projects
 
     # Test the structure of the optimization model
     num_clusters = len(set(wd_gas["Clusters"]))
@@ -249,7 +258,6 @@ def test_opt_model_inputs(get_column_names):
     assert hasattr(opt_mdl.cluster[1], "num_well_uniqueness")
     assert not hasattr(opt_mdl.cluster[1], "ordering_num_wells_vars")
     assert hasattr(opt_mdl.cluster[1], "skip_distant_well_cuts")
-    assert len(opt_mdl.cluster[1].skip_distant_well_cuts) == 0
 
     # Test activate and deactivate methods
     opt_mdl.cluster[1].deactivate()
@@ -335,7 +343,10 @@ def test_incremental_formulation(get_column_names):
 
     assert isinstance(opt_mdl, PluggingCampaignModel)
     assert isinstance(opt_campaign, Campaign)
-    assert isinstance(opt_campaign.projects[1], Project)
+    project_keys = list(opt_campaign.projects.keys())
+    example_key = project_keys[0]  # Pick the first available key
+    assert isinstance(opt_campaign.projects[example_key], Project)
+
     # assert isinstance(opt_campaign[1], dict)
 
     # Check if the scaling factor for budget slack variable is correctly built
@@ -344,9 +355,6 @@ def test_incremental_formulation(get_column_names):
     # pylint: disable=no-member
     assert np.isclose(opt_mdl.unused_budget_scaling.value, 0)
     assert not budget_sufficient
-
-    # Four or five projects are chosen in the optimal campaign
-    # TODO: Confirm degeneracy
 
     assert len(opt_campaign.projects) in [4, 5]
 

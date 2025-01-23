@@ -310,7 +310,7 @@ class Campaign:
         wd: WellData,
         clusters_dict: dict,
         plugging_cost: dict,
-        efficiency_model_scores: Optional[dict] = None,
+        efficiency_model_scores: Optional[dict[int, dict[str, float]]] = None,
     ):
         """
         Represents an optimal campaign that consists of multiple projects.
@@ -328,7 +328,7 @@ class Campaign:
             A dictionary where keys are cluster numbers and values
             are plugging cost for that cluster
 
-        efficiency_model_scores : dict[dict[str, float]]
+        efficiency_model_scores : dict[int, dict[str, float]]
             A dictionary where keys are cluster numbers and the values
             are a dictionary of efficiency score names mapped to values
         """
